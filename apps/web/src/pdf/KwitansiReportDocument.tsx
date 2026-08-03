@@ -17,7 +17,7 @@ export interface KwitansiReportData {
   readonly totalFormatted: string;
   readonly terbilang: string;
   readonly paymentStatus: 'BELUM_LUNAS' | 'LUNAS';
-  readonly adminNama: string;
+  readonly kasirNama: string;
 }
 
 const BLUE = '#2b4c9b';
@@ -319,7 +319,7 @@ export function KwitansiReportDocument({ data }: { readonly data: KwitansiReport
             <View style={styles.signatureBox}>
               <Text style={styles.signatureTitle}>Petugas Kasir,</Text>
               <Text style={styles.signatureName}>
-                {data.adminNama ? data.adminNama : '( ................................. )'}
+                {data.kasirNama ? data.kasirNama : '( ................................. )'}
               </Text>
             </View>
           </View>

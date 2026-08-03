@@ -34,6 +34,7 @@ interface PasienDuplikatItem {
   readonly hasilStatus: 'MENUNGGU_HASIL' | 'SELESAI';
   readonly paymentStatus: 'BELUM_LUNAS' | 'LUNAS';
   readonly pemeriksaanNama: string;
+  readonly petugasKasir: string | null;
   readonly totalHarga: string;
   readonly createdAt: string;
 }
@@ -110,7 +111,7 @@ export function RadiologDuplikatPage() {
       totalFormatted: formatRupiah(item.totalHarga),
       terbilang: terbilangRupiah(item.totalHarga),
       paymentStatus: item.paymentStatus,
-      adminNama: '',
+      kasirNama: item.petugasKasir || '',
     };
   }
 

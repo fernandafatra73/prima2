@@ -7,7 +7,7 @@ import { TableRowActions } from '../components/ui/TableRowActions.tsx';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
-import { apiPatch } from '../lib/api.ts';
+import { apiGet, apiPatch } from '../lib/api.ts';
 import { formatDateShort, formatRupiah } from '../lib/format.ts';
 import { terbilangRupiah } from '../lib/terbilang.ts';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
@@ -21,9 +21,15 @@ interface PasienDuplikatLabItem {
   readonly alamat: string | null;
   readonly pengirimNama: string;
   readonly pemeriksaanNama: string;
+  readonly petugasKasir: string | null;
   readonly paymentStatus: 'BELUM_LUNAS' | 'LUNAS';
   readonly totalHarga: string;
   readonly createdAt: string;
+}
+
+interface PetugasKasirItem {
+  readonly id: string;
+  readonly nama: string;
 }
 
 export function KwitansiLaboratoriumPage() {
@@ -36,10 +42,12 @@ export function KwitansiLaboratoriumPage() {
   const [logoSrc, setLogoSrc] = useState('');
   const [previewItem, setPreviewItem] = useState<PasienDuplikatLabItem | null>(null);
 
+  const [kasirList, setKasirList] = useState<PetugasKasirItem[]>([]);
   const [editItem, setEditItem] = useState<PasienDuplikatLabItem | null>(null);
   const [editPemeriksaanNama, setEditPemeriksaanNama] = useState('');
   const [editTotalHarga, setEditTotalHarga] = useState('0');
   const [editPaymentStatus, setEditPaymentStatus] = useState<'BELUM_LUNAS' | 'LUNAS'>('BELUM_LUNAS');
+  const [editPetugasKasir, setEditPetugasKasir] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -47,11 +55,18 @@ export function KwitansiLaboratoriumPage() {
     void loadLogoDataUrl().then(setLogoSrc).catch(() => setLogoSrc(''));
   }, []);
 
+  useEffect(() => {
+    apiGet<{ items: PetugasKasirItem[] }>('/api/petugas-kasir?limit=200')
+      .then((res) => setKasirList(res.items))
+      .catch(() => setKasirList([]));
+  }, []);
+
   function openEdit(item: PasienDuplikatLabItem) {
     setEditItem(item);
     setEditPemeriksaanNama(item.pemeriksaanNama);
     setEditTotalHarga(item.totalHarga);
     setEditPaymentStatus(item.paymentStatus);
+    setEditPetugasKasir(item.petugasKasir ?? '');
     setEditError(null);
   }
 
@@ -65,6 +80,7 @@ export function KwitansiLaboratoriumPage() {
         pemeriksaanNama: editPemeriksaanNama,
         totalHarga: Number(editTotalHarga) || 0,
         paymentStatus: editPaymentStatus,
+        petugasKasir: editPetugasKasir,
       });
       setEditItem(null);
       await reload();
@@ -87,7 +103,7 @@ export function KwitansiLaboratoriumPage() {
       totalFormatted: formatRupiah(p.totalHarga),
       terbilang: terbilangRupiah(p.totalHarga),
       paymentStatus: p.paymentStatus,
-      adminNama: '',
+      kasirNama: p.petugasKasir || '',
     };
   }
 
@@ -277,6 +293,22 @@ export function KwitansiLaboratoriumPage() {
               >
                 <option value="BELUM_LUNAS">BELUM LUNAS</option>
                 <option value="LUNAS">LUNAS</option>
+              </select>
+            </div>
+
+            <div className="form-field" style={{ marginBottom: '1rem' }}>
+              <label htmlFor="edit-petugas-kasir">Petugas Kasir</label>
+              <select
+                id="edit-petugas-kasir"
+                value={editPetugasKasir}
+                onChange={(e) => setEditPetugasKasir(e.target.value)}
+              >
+                <option value="">-- Pilih Petugas Kasir --</option>
+                {kasirList.map((k) => (
+                  <option key={k.id} value={k.nama}>
+                    {k.nama}
+                  </option>
+                ))}
               </select>
             </div>
 

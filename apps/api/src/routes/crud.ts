@@ -2078,6 +2078,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       sharingAmount?: number;
       radiologId?: string;
       admin?: string;
+      petugasKasir?: string;
       asalModul?: 'RADIOLOGI' | 'LABORATORIUM';
     };
   }>('/api/pasien', async (req, reply) => {
@@ -2144,6 +2145,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         totalSharing,
         radiologId: body.radiologId || null,
         admin: body.admin?.trim() || null,
+        petugasKasir: body.petugasKasir?.trim() || null,
         pemeriksaan: { create: pemeriksaanData },
         paketLab: { create: paketLabData },
       },
@@ -2174,6 +2176,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       sharingAmount?: number;
       jenisPemeriksaanIds?: string[];
       admin?: string;
+      petugasKasir?: string;
       kesan?: string;
       sharingLocked?: boolean;
     };
@@ -2271,6 +2274,8 @@ export async function registerCrudRoutes(app: FastifyInstance) {
           radiologId:
             req.body.radiologId !== undefined ? req.body.radiologId || null : existing.radiologId,
           admin: req.body.admin !== undefined ? req.body.admin?.trim() || null : existing.admin,
+          petugasKasir:
+            req.body.petugasKasir !== undefined ? req.body.petugasKasir?.trim() || null : existing.petugasKasir,
           sharingLocked,
           sharingType: 'FIXED',
           sharingPercent: new Decimal(0),
@@ -2381,6 +2386,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         hasilStatus: d.hasilStatus,
         paymentStatus: d.paymentStatus,
         pemeriksaanNama: d.pemeriksaanNama,
+        petugasKasir: d.petugasKasir,
         totalHarga: serializeDecimal(d.totalHarga),
         totalSharing: serializeDecimal(d.totalSharing),
         createdAt: d.registeredAt.toISOString(),
@@ -2398,6 +2404,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       noTelepon?: string;
       pengirimNama?: string;
       pemeriksaanNama?: string;
+      petugasKasir?: string;
       kesan?: string;
       totalHarga?: number;
       totalSharing?: number;
@@ -2416,6 +2423,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         noTelepon: b.noTelepon !== undefined ? b.noTelepon?.trim() || null : existing.noTelepon,
         pengirimNama: b.pengirimNama?.trim() ?? existing.pengirimNama,
         pemeriksaanNama: b.pemeriksaanNama?.trim() ?? existing.pemeriksaanNama,
+        petugasKasir: b.petugasKasir !== undefined ? b.petugasKasir?.trim() || null : existing.petugasKasir,
         kesan: b.kesan !== undefined ? b.kesan?.trim() || null : existing.kesan,
         totalHarga: b.totalHarga !== undefined ? b.totalHarga : existing.totalHarga,
         totalSharing: b.totalSharing !== undefined ? b.totalSharing : existing.totalSharing,
@@ -2440,6 +2448,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         hasilStatus: item.hasilStatus,
         paymentStatus: item.paymentStatus,
         pemeriksaanNama: item.pemeriksaanNama,
+        petugasKasir: item.petugasKasir,
         totalHarga: serializeDecimal(item.totalHarga),
         totalSharing: serializeDecimal(item.totalSharing),
         createdAt: item.registeredAt.toISOString(),
@@ -3007,6 +3016,7 @@ function mapPasien(
     sharingLocked: boolean;
     kesan: string | null;
     admin: string | null;
+    petugasKasir: string | null;
     createdAt: Date;
     pengirim: { id: string; nama: string };
     radiolog?: { id: string; nama: string } | null;
@@ -3042,6 +3052,7 @@ function mapPasien(
     sharingLocked: p.sharingLocked,
     kesan: p.kesan,
     admin: p.admin,
+    petugasKasir: p.petugasKasir,
     radiolog: p.radiolog ?? null,
     // Radiologi pakai PasienPemeriksaan (relasi ke JenisPemeriksaan), Laboratorium
     // pakai PasienPaketLab (relasi ke PaketLab) — keduanya digabung jadi satu

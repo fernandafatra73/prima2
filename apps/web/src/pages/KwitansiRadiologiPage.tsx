@@ -22,6 +22,7 @@ interface KwitansiPasienItem {
   readonly alamat: string | null;
   readonly createdAt: string;
   readonly admin: string | null;
+  readonly petugasKasir: string | null;
   readonly paymentStatus: 'BELUM_LUNAS' | 'LUNAS';
   readonly totalHarga: string;
   readonly pengirim: { readonly nama: string };
@@ -32,6 +33,11 @@ interface JenisItem {
   readonly id: string;
   readonly nama: string;
   readonly harga: string | null;
+}
+
+interface PetugasKasirItem {
+  readonly id: string;
+  readonly nama: string;
 }
 
 export function KwitansiRadiologiPage() {
@@ -45,9 +51,11 @@ export function KwitansiRadiologiPage() {
   const [previewItem, setPreviewItem] = useState<KwitansiPasienItem | null>(null);
 
   const [jenisList, setJenisList] = useState<JenisItem[]>([]);
+  const [kasirList, setKasirList] = useState<PetugasKasirItem[]>([]);
   const [editItem, setEditItem] = useState<KwitansiPasienItem | null>(null);
   const [editSelectedJenis, setEditSelectedJenis] = useState<string[]>([]);
   const [editPaymentStatus, setEditPaymentStatus] = useState<'BELUM_LUNAS' | 'LUNAS'>('BELUM_LUNAS');
+  const [editPetugasKasir, setEditPetugasKasir] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -64,6 +72,12 @@ export function KwitansiRadiologiPage() {
       .catch(() => setJenisList([]));
   }, []);
 
+  useEffect(() => {
+    apiGet<{ items: PetugasKasirItem[] }>('/api/petugas-kasir?limit=200')
+      .then((res) => setKasirList(res.items))
+      .catch(() => setKasirList([]));
+  }, []);
+
   const editTotalHarga = useMemo(
     () =>
       jenisList
@@ -76,6 +90,7 @@ export function KwitansiRadiologiPage() {
     setEditItem(item);
     setEditSelectedJenis(item.pemeriksaan.map((x) => x.jenisPemeriksaanId));
     setEditPaymentStatus(item.paymentStatus);
+    setEditPetugasKasir(item.petugasKasir ?? '');
     setEditError(null);
   }
 
@@ -91,6 +106,7 @@ export function KwitansiRadiologiPage() {
     try {
       await apiPatch(`/api/pasien/${editItem.id}`, {
         paymentStatus: editPaymentStatus,
+        petugasKasir: editPetugasKasir,
         jenisPemeriksaanIds: editSelectedJenis,
       });
       setEditItem(null);
@@ -128,7 +144,7 @@ export function KwitansiRadiologiPage() {
       totalFormatted: formatRupiah(p.totalHarga),
       terbilang: terbilangRupiah(p.totalHarga),
       paymentStatus: p.paymentStatus,
-      adminNama: p.admin || '',
+      kasirNama: p.petugasKasir || '',
     };
   }
 
@@ -299,6 +315,22 @@ export function KwitansiRadiologiPage() {
               >
                 <option value="BELUM_LUNAS">BELUM LUNAS</option>
                 <option value="LUNAS">LUNAS</option>
+              </select>
+            </div>
+
+            <div className="form-field" style={{ marginBottom: '1rem' }}>
+              <label htmlFor="edit-petugas-kasir">Petugas Kasir</label>
+              <select
+                id="edit-petugas-kasir"
+                value={editPetugasKasir}
+                onChange={(e) => setEditPetugasKasir(e.target.value)}
+              >
+                <option value="">-- Pilih Petugas Kasir --</option>
+                {kasirList.map((k) => (
+                  <option key={k.id} value={k.nama}>
+                    {k.nama}
+                  </option>
+                ))}
               </select>
             </div>
 

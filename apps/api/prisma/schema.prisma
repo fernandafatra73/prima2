@@ -431,6 +431,7 @@ model Pasien {
   sharingLocked   Boolean       @default(false)
   kesan           String?
   admin           String?
+  petugasKasir    String?
   radiologId      String?
   radiolog        Radiolog?     @relation("PasienRadiolog", fields: [radiologId], references: [id])
   pemeriksaan     PasienPemeriksaan[]
@@ -457,6 +458,7 @@ model PasienDuplikat {
   hasilStatus     HasilStatus   @default(MENUNGGU_HASIL)
   paymentStatus   PaymentStatus @default(BELUM_LUNAS)
   pemeriksaanNama String        @default("")
+  petugasKasir    String?
   totalHarga      Decimal       @default(0)
   totalSharing    Decimal       @default(0)
   registeredAt    DateTime
