@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { PDFViewer, pdf } from '@react-pdf/renderer';
+import { ConfirmModal } from '../components/ui/ConfirmModal.tsx';
 import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { Modal } from '../components/ui/Modal.tsx';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
+import { apiDelete } from '../lib/api.ts';
 import { formatUmurTahun } from '../lib/format.ts';
 import { groupLabRowsForPdf, parseLabKesan } from '../lib/labKesan.ts';
 import { LabReportDocument, type LabReportData } from '../pdf/LabReportDocument.tsx';
@@ -55,13 +57,15 @@ export function LabDuplikatPage() {
   const [previewItem, setPreviewItem] = useState<PasienDuplikatItem | null>(null);
   const [logoSrc, setLogoSrc] = useState('');
   const [printing, setPrinting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<PasienDuplikatItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const queryParams = useListQueryParams(
     { modul: 'LABORATORIUM', ...(hasilTab !== 'all' ? { hasilStatus: hasilTab } : {}) },
     search,
   );
 
-  const { items, pagination, setPage, loading, error, reload } =
+  const { items, pagination, setPage, loading, error, setError, reload } =
     usePaginatedList<PasienDuplikatItem>('/api/pasien-duplikat', queryParams);
 
   const waitingCount = items.filter((i) => i.hasilStatus === 'MENUNGGU_HASIL').length;
@@ -97,6 +101,21 @@ export function LabDuplikatPage() {
       downloadBlob(blob, `Hasil_Lab_${cleanName}.pdf`);
     } finally {
       setPrinting(false);
+    }
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await apiDelete(`/api/pasien-duplikat/${deleteTarget.id}`);
+      setDeleteTarget(null);
+      await reload();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus arsip');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -209,6 +228,15 @@ export function LabDuplikatPage() {
                     >
                       🖨️ Cetak Preview
                     </button>
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => setDeleteTarget(item)}
+                      style={{ border: '1px solid var(--color-border)', color: '#ef4444' }}
+                      title="Hapus arsip"
+                    >
+                      🗑️ Hapus
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -310,6 +338,15 @@ export function LabDuplikatPage() {
           </div>
         </Modal>
       )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Hapus Arsip"
+        message={`Yakin hapus permanen arsip "${deleteTarget?.nama ?? ''}" (${deleteTarget?.regCode ?? ''})? Tindakan ini tidak bisa dibatalkan.`}
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => void handleDeleteConfirm()}
+      />
     </ListPageShell>
   );
 }
