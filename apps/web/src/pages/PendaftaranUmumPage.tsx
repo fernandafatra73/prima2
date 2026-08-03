@@ -547,7 +547,7 @@ export function PendaftaranUmumPage() {
                   />
                 </div>
 
-                <div style={{ gridColumn: '1 / -1' }}>
+                <div>
                   <label htmlFor="alamat" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
                     Alamat Lengkap Pasien
                   </label>
@@ -558,6 +558,28 @@ export function PendaftaranUmumPage() {
                     value={formData.alamat}
                     onChange={handleChange}
                     placeholder="Nama jalan, RT/RW, kelurahan, kecamatan..."
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid #7dd3fc',
+                      background: '#ffffff',
+                      color: '#0f172a',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="klinis" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
+                    Klinis (Keterangan Medis / Keluhan Pasien)
+                  </label>
+                  <textarea
+                    id="klinis"
+                    name="klinis"
+                    rows={2}
+                    value={formData.klinis}
+                    onChange={handleChange}
+                    placeholder="Keluhan utama, riwayat medis singkat, diagnosa sementara..."
                     style={{
                       width: '100%',
                       padding: '0.55rem 0.75rem',
@@ -652,28 +674,6 @@ export function PendaftaranUmumPage() {
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label htmlFor="klinis" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Klinis (Keterangan Medis / Keluhan Pasien)
-                  </label>
-                  <textarea
-                    id="klinis"
-                    name="klinis"
-                    rows={2}
-                    value={formData.klinis}
-                    onChange={handleChange}
-                    placeholder="Keluhan utama, riwayat medis singkat, diagnosa sementara..."
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                    }}
-                  />
                 </div>
               </div>
             </div>
