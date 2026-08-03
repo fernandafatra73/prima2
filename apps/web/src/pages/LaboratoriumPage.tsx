@@ -1382,7 +1382,7 @@ export function LaboratoriumPage() {
               </select>
             </div>
 
-            <div className="form-field form-field--full" style={{ padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)' }}>
+            <div className="form-field form-grid--full" style={{ padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)' }}>
               <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>2. Pilih Jenis Pemeriksaan Lab (Paket) *</label>
               <div className="checkbox-list" style={{ flexDirection: 'row', flexWrap: 'wrap', maxHeight: '420px', overflowY: 'auto' }}>
                 {paketList.map((p) => (
