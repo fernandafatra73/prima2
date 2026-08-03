@@ -1,33 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
-import { playSong, songDurationMs, SONGS, type Song } from '../lib/musicPlayer.ts';
-import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api.ts';
+import { SONGS } from '../lib/musicPlayer.ts';
+import { useMusicPlayer, type PlaylistItem } from '../context/MusicPlayerContext.tsx';
+import { apiDelete, apiPatch, apiPost } from '../lib/api.ts';
 import { Modal } from '../components/ui/Modal.tsx';
 import { ModalFormFooter } from '../components/ui/ModalFormFooter.tsx';
 import '../components/ui/ui.css';
 
-interface PlaylistItem {
-  readonly id: string;
-  readonly judul: string;
-  readonly audioData: string;
-  readonly lirik: string | null;
-}
-
 export function MusikPage() {
+  const {
+    isOn,
+    selectedSongId,
+    setSelectedSongId,
+    turnOn: turnOnBuiltin,
+    turnOff: turnOffBuiltin,
+    playlist,
+    playlistLoading,
+    reloadPlaylist,
+    playingId: playingLaguId,
+    playLoadingId,
+    playItem,
+    stopPlaylist,
+  } = useMusicPlayer();
   const [customAudioUrl, setCustomAudioUrl] = useState<string | null>(null);
   const [customFileName, setCustomFileName] = useState<string | null>(null);
+  const [customAudioPlaying, setCustomAudioPlaying] = useState(false);
   const [loop, setLoop] = useState(false);
-  const [selectedSongId, setSelectedSongId] = useState(SONGS[0]!.id);
-  const [isOn, setIsOn] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const loopTimeoutRef = useRef<number | null>(null);
 
-  const [playlist, setPlaylist] = useState<readonly PlaylistItem[]>([]);
-  const [playlistLoading, setPlaylistLoading] = useState(true);
   const [playlistError, setPlaylistError] = useState<string | null>(null);
   const [uploadingLagu, setUploadingLagu] = useState(false);
   const [deletingLaguId, setDeletingLaguId] = useState<string | null>(null);
-  const [playingLaguId, setPlayingLaguId] = useState<string | null>(null);
-  const playlistAudioRef = useRef<HTMLAudioElement | null>(null);
   const [lirikEditing, setLirikEditing] = useState<PlaylistItem | null>(null);
   const [lirikDraft, setLirikDraft] = useState('');
   const [savingLirik, setSavingLirik] = useState(false);
@@ -36,23 +38,6 @@ export function MusikPage() {
   const [addLaguFile, setAddLaguFile] = useState<File | null>(null);
   const [addLaguJudul, setAddLaguJudul] = useState('');
   const [addLaguLirik, setAddLaguLirik] = useState('');
-
-  async function loadPlaylist() {
-    setPlaylistLoading(true);
-    setPlaylistError(null);
-    try {
-      const res = await apiGet<{ items: readonly PlaylistItem[] }>('/api/playlist-lagu');
-      setPlaylist(res.items);
-    } catch (err: unknown) {
-      setPlaylistError(err instanceof Error ? err.message : 'Gagal memuat daftar lagu');
-    } finally {
-      setPlaylistLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void loadPlaylist();
-  }, []);
 
   function openAddLagu() {
     setAddLaguFile(null);
@@ -87,7 +72,7 @@ export function MusikPage() {
             lirik: addLaguLirik.trim() || undefined,
           });
           setAddLaguOpen(false);
-          await loadPlaylist();
+          await reloadPlaylist();
         } catch (err: unknown) {
           setPlaylistError(err instanceof Error ? err.message : 'Gagal menambah lagu');
         } finally {
@@ -103,19 +88,10 @@ export function MusikPage() {
   }
 
   function playPlaylistItem(item: PlaylistItem) {
-    turnOff();
-    playlistAudioRef.current?.pause();
-    const audio = new Audio(item.audioData);
-    playlistAudioRef.current = audio;
-    setPlayingLaguId(item.id);
-    audio.onended = () => setPlayingLaguId((cur) => (cur === item.id ? null : cur));
-    void audio.play();
-  }
-
-  function stopPlaylistItem() {
-    playlistAudioRef.current?.pause();
-    playlistAudioRef.current = null;
-    setPlayingLaguId(null);
+    turnOffBuiltin();
+    audioRef.current?.pause();
+    setCustomAudioPlaying(false);
+    playItem(item);
   }
 
   function openLirikEdit(item: PlaylistItem) {
@@ -130,7 +106,7 @@ export function MusikPage() {
     try {
       await apiPatch(`/api/playlist-lagu/${lirikEditing.id}`, { lirik: lirikDraft });
       setLirikEditing(null);
-      await loadPlaylist();
+      await reloadPlaylist();
     } catch (err: unknown) {
       setPlaylistError(err instanceof Error ? err.message : 'Gagal menyimpan lirik');
     } finally {
@@ -142,9 +118,9 @@ export function MusikPage() {
     setDeletingLaguId(id);
     setPlaylistError(null);
     try {
-      if (playingLaguId === id) stopPlaylistItem();
+      if (playingLaguId === id) stopPlaylist();
       await apiDelete(`/api/playlist-lagu/${id}`);
-      await loadPlaylist();
+      await reloadPlaylist();
     } catch (err: unknown) {
       setPlaylistError(err instanceof Error ? err.message : 'Gagal menghapus lagu');
     } finally {
@@ -165,65 +141,45 @@ export function MusikPage() {
 
   useEffect(() => {
     return () => {
-      if (loopTimeoutRef.current !== null) {
-        window.clearTimeout(loopTimeoutRef.current);
-      }
       audioRef.current?.pause();
-      playlistAudioRef.current?.pause();
     };
   }, []);
 
-  function stopLoop() {
-    if (loopTimeoutRef.current !== null) {
-      window.clearTimeout(loopTimeoutRef.current);
-      loopTimeoutRef.current = null;
-    }
-  }
-
-  function scheduleNextLoop(song: Song) {
-    loopTimeoutRef.current = window.setTimeout(() => {
-      playSong(song);
-      scheduleNextLoop(song);
-    }, songDurationMs(song));
-  }
-
-  function turnOn() {
-    setIsOn(true);
-    if (customAudioUrl && audioRef.current) {
-      audioRef.current.loop = true;
-      void audioRef.current.play();
-      return;
-    }
-    const song = SONGS.find((s) => s.id === selectedSongId) ?? SONGS[0]!;
-    playSong(song);
-    scheduleNextLoop(song);
-  }
-
-  function turnOff() {
-    setIsOn(false);
-    stopLoop();
-    audioRef.current?.pause();
-  }
+  const effectiveIsOn = customAudioUrl ? customAudioPlaying : isOn;
 
   function toggleMusic() {
+    if (customAudioUrl) {
+      if (customAudioPlaying) {
+        audioRef.current?.pause();
+        setCustomAudioPlaying(false);
+      } else {
+        turnOffBuiltin();
+        audioRef.current?.play();
+        setCustomAudioPlaying(true);
+      }
+      return;
+    }
     if (isOn) {
-      turnOff();
+      turnOffBuiltin();
     } else {
-      turnOn();
+      turnOnBuiltin();
     }
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    turnOff();
+    turnOffBuiltin();
+    audioRef.current?.pause();
+    setCustomAudioPlaying(false);
     setCustomAudioUrl(URL.createObjectURL(file));
     setCustomFileName(file.name);
     e.target.value = '';
   }
 
   function clearCustomAudio() {
-    turnOff();
+    audioRef.current?.pause();
+    setCustomAudioPlaying(false);
     setCustomAudioUrl(null);
     setCustomFileName(null);
   }
@@ -247,8 +203,8 @@ export function MusikPage() {
       <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
       <div
         style={{
-          background: isOn ? '#f0f9ff' : '#fff',
-          border: `2px solid ${isOn ? '#0369a1' : '#e2e8f0'}`,
+          background: effectiveIsOn ? '#f0f9ff' : '#fff',
+          border: `2px solid ${effectiveIsOn ? '#0369a1' : '#e2e8f0'}`,
           borderRadius: '14px',
           padding: '2rem',
           display: 'flex',
@@ -262,16 +218,16 @@ export function MusikPage() {
         <button
           type="button"
           onClick={toggleMusic}
-          className={isOn ? 'musik-ph-toggle--on' : undefined}
-          aria-pressed={isOn}
-          title={isOn ? 'Matikan musik' : 'Nyalakan musik'}
+          className={effectiveIsOn ? 'musik-ph-toggle--on' : undefined}
+          aria-pressed={effectiveIsOn}
+          title={effectiveIsOn ? 'Matikan musik' : 'Nyalakan musik'}
           style={{
             width: '96px',
             height: '96px',
             borderRadius: '50%',
             border: 'none',
             cursor: 'pointer',
-            background: isOn ? '#0369a1' : '#cbd5e1',
+            background: effectiveIsOn ? '#0369a1' : '#cbd5e1',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',
@@ -279,22 +235,21 @@ export function MusikPage() {
             fontSize: '2.5rem',
           }}
         >
-          {isOn ? '🔊' : '🔈'}
+          {effectiveIsOn ? '🔊' : '🔈'}
         </button>
 
         <div style={{ marginTop: '1rem', fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
           Klinik Prima Husada
         </div>
-        <div style={{ marginTop: '0.25rem', fontSize: '0.85rem', fontWeight: 600, color: isOn ? '#0369a1' : '#94a3b8' }}>
-          {isOn ? '● Musik Menyala' : '○ Musik Mati'}
+        <div style={{ marginTop: '0.25rem', fontSize: '0.85rem', fontWeight: 600, color: effectiveIsOn ? '#0369a1' : '#94a3b8' }}>
+          {effectiveIsOn ? '● Musik Menyala' : '○ Musik Mati'}
         </div>
 
         {!customAudioUrl && (
           <select
             value={selectedSongId}
             onChange={(e) => {
-              const wasOn = isOn;
-              if (wasOn) turnOff();
+              if (isOn) turnOffBuiltin();
               setSelectedSongId(e.target.value);
             }}
             style={{
@@ -432,6 +387,7 @@ export function MusikPage() {
               ) : (
                 playlist.map((item, idx) => {
                   const isPlaying = playingLaguId === item.id;
+                  const isLoadingPlay = playLoadingId === item.id;
                   return (
                     <tr key={item.id} style={isPlaying ? { background: '#f0f9ff' } : undefined}>
                       <td>{idx + 1}</td>
@@ -441,9 +397,10 @@ export function MusikPage() {
                           <button
                             type="button"
                             className="btn btn--sm btn--secondary"
-                            onClick={() => (isPlaying ? stopPlaylistItem() : playPlaylistItem(item))}
+                            disabled={isLoadingPlay}
+                            onClick={() => (isPlaying ? stopPlaylist() : playPlaylistItem(item))}
                           >
-                            {isPlaying ? '⏸️ Stop' : '▶️ Putar'}
+                            {isLoadingPlay ? '⏳ Memuat…' : isPlaying ? '⏸️ Stop' : '▶️ Putar'}
                           </button>
                           <button
                             type="button"

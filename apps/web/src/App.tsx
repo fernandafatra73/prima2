@@ -1,4 +1,5 @@
 import { ListRefreshProvider } from './context/ListRefreshContext.tsx';
+import { MusicPlayerProvider } from './context/MusicPlayerContext.tsx';
 import { AppShell } from './components/layout/AppShell.tsx';
 import { PdfPreviewHost } from './pdf/pdfPreviewHost.tsx';
 import { DASHBOARD_NAV_ID, getNavLabel, isViewAllowedForRole, type AppViewId } from './config/navigation.ts';
@@ -234,11 +235,13 @@ export function App() {
 
   return (
     <ListRefreshProvider>
-      <PdfPreviewHost>
-        <AppShell activeView={activeView} authUser={authUser} onNavigate={navigate} onLogout={handleLogout}>
-          {renderView(activeView, authUser.role)}
-        </AppShell>
-      </PdfPreviewHost>
+      <MusicPlayerProvider>
+        <PdfPreviewHost>
+          <AppShell activeView={activeView} authUser={authUser} onNavigate={navigate} onLogout={handleLogout}>
+            {renderView(activeView, authUser.role)}
+          </AppShell>
+        </PdfPreviewHost>
+      </MusicPlayerProvider>
     </ListRefreshProvider>
   );
 }

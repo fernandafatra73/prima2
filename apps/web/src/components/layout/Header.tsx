@@ -1,4 +1,5 @@
 import { getNavLabel, type AppViewId } from '../../config/navigation.ts';
+import { useMusicPlayer } from '../../context/MusicPlayerContext.tsx';
 import type { AuthUser } from '../../lib/auth.ts';
 import { IconBell, IconLogout } from '../icons/NavIcons.tsx';
 import './layout.css';
@@ -25,6 +26,11 @@ function getInitials(name: string): string {
 export function Header({ activeView, authUser, onLogout }: HeaderProps) {
   const pageTitle = getNavLabel(activeView);
   const initials = getInitials(authUser.nama) || 'LP';
+  const { playingId, playLoadingId, playlist, toggleQuickPlay } = useMusicPlayer();
+  const isPlaying = playingId !== null;
+  const isLoading = playLoadingId !== null;
+  const playingSong = playlist.find((p) => p.id === playingId);
+  const hasPlaylist = playlist.length > 0;
 
   return (
     <header className="app-header">
@@ -39,6 +45,27 @@ export function Header({ activeView, authUser, onLogout }: HeaderProps) {
       <div className="app-header__actions">
         <button type="button" className="app-header__icon-btn" aria-label="Notifikasi">
           <IconBell />
+        </button>
+
+        <button
+          type="button"
+          className="app-header__icon-btn"
+          aria-pressed={isPlaying}
+          aria-label={isPlaying ? `Hentikan musik: ${playingSong?.judul ?? ''}` : 'Putar musik'}
+          title={
+            isLoading
+              ? 'Memuat lagu…'
+              : isPlaying
+                ? `Hentikan musik: ${playingSong?.judul ?? ''}`
+                : hasPlaylist
+                  ? 'Putar musik dari Daftar Lagu'
+                  : 'Belum ada lagu di Daftar Lagu (Musik-PH)'
+          }
+          onClick={toggleQuickPlay}
+          disabled={isLoading || (!isPlaying && !hasPlaylist)}
+          style={isPlaying ? { color: 'var(--color-primary)' } : undefined}
+        >
+          {isLoading ? '⏳' : isPlaying ? '⏸️' : '▶️'}
         </button>
 
         <div className="app-header__user">

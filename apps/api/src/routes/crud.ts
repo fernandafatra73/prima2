@@ -1503,8 +1503,27 @@ export async function registerCrudRoutes(app: FastifyInstance) {
   // ─── Playlist Lagu (Musik-PH) ───────────────────────────────────────────────
 
   app.get('/api/playlist-lagu', async () => {
-    const items = await prisma.playlistLagu.findMany({ orderBy: { createdAt: 'asc' } });
+    const items = await prisma.playlistLagu.findMany({
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, judul: true, lirik: true, createdAt: true },
+    });
     return { items };
+  });
+
+  app.get<{ Params: { id: string } }>('/api/playlist-lagu/:id/audio', async (req, reply) => {
+    const item = await prisma.playlistLagu.findUnique({
+      where: { id: req.params.id },
+      select: { audioData: true },
+    });
+    if (!item) return reply.status(404).send({ error: 'Lagu tidak ditemukan' });
+    const match = item.audioData.match(/^data:([^;]+);base64,(.+)$/s);
+    if (!match) return reply.status(500).send({ error: 'Format audio tidak valid' });
+    const [, mime, base64] = match;
+    const buffer = Buffer.from(base64!, 'base64');
+    reply.header('Content-Type', mime);
+    reply.header('Content-Length', String(buffer.length));
+    reply.header('Cache-Control', 'private, max-age=3600');
+    return reply.send(buffer);
   });
 
   app.post<{ Body: { judul: string; audioData: string; lirik?: string } }>(
