@@ -260,7 +260,7 @@ export function PasienPage() {
         apiGet<PaginatedResponse<Jenis>>('/api/jenis-pemeriksaan?page=1&limit=200'),
         apiGet<PaginatedResponse<Radiolog>>('/api/radiolog?page=1&limit=200'),
         apiGet<PaginatedResponse<PendaftaranUmumItem>>('/api/pendaftaran-umum?page=1&limit=300').catch(() => ({ items: [] })),
-        apiGet<PaginatedResponse<Staff>>('/api/staff?page=1&limit=200').catch(() => ({ items: [] })),
+        apiGet<PaginatedResponse<Staff>>('/api/admin-pendaftaran?page=1&limit=200').catch(() => ({ items: [] })),
       ]);
       setDokter(dokterRes.items);
       setJenis(jenisRes.items.filter((j) => j.harga !== null));
@@ -308,30 +308,34 @@ export function PasienPage() {
       setNoTelepon('');
       setKlinis('');
       setTanggalLahir('');
+      setUmurManual('');
       setPengirimId('');
       setSharingAmount('0');
       setSharingMode('auto');
       setAdmin('');
       return;
     }
-    
+
     setNama(p.namaPasien);
     setAlamat(p.alamat || '');
     setNoTelepon(p.telpon || '');
     setKlinis(p.klinis || '');
     setAdmin(p.admin || '');
-    
+
     if (p.umur) {
       const match = p.umur.match(/(\d+)/);
       if (match) {
         const years = parseInt(match[1], 10);
         const y = new Date().getFullYear() - years;
         setTanggalLahir(`${y}-01-01`);
+        setUmurManual(String(years));
       } else {
         setTanggalLahir('');
+        setUmurManual('');
       }
     } else {
       setTanggalLahir('');
+      setUmurManual('');
     }
     
     if (p.dokterPengirim) {
@@ -955,7 +959,7 @@ export function PasienPage() {
           </select>
         </div>
         <div className="form-field">
-          <label htmlFor="admin">Admin</label>
+          <label htmlFor="admin">Admin Pendaftaran</label>
           <select id="admin" value={admin} onChange={(e) => setAdmin(e.target.value)}>
             <option value="">Pilih admin</option>
             {staffList.map((s) => (
@@ -1256,47 +1260,23 @@ export function PasienPage() {
                 ))}
               </select>
             </div>
-            <div className="form-field" style={{ gridColumn: '4', gridRow: '2' }}>
-              <label htmlFor="tgl">Tanggal lahir *</label>
-              <input
-                id="tgl"
-                type="date"
-                required
-                min={birthDateInputMin()}
-                max={birthDateInputMax()}
-                value={tanggalLahir}
-                onChange={(e) => {
-                  setTanggalLahir(e.target.value);
-                  const years = isValidBirthDate(e.target.value) ? computeUmurYears(e.target.value) : null;
-                  setUmurManual(years === null ? '' : String(years));
-                }}
-                onBlur={(e) => setTanggalLahir(normalizeBirthDateOnBlur(e.target.value))}
-              />
+            <div className="form-field" style={{ gridColumn: '2', gridRow: '1' }}>
+              <label htmlFor="nama">Nama *</label>
+              <input id="nama" required value={nama} onChange={(e) => setNama(e.target.value)} />
             </div>
-            <div className="form-field" style={{ gridColumn: '4', gridRow: '3' }}>
-              <label htmlFor="umur-manual">Umur (tahun)</label>
+            <div className="form-field" style={{ gridColumn: '3', gridRow: '1' }}>
+              <label htmlFor="umur-manual">Umur (tahun) *</label>
               <input
                 id="umur-manual"
                 type="number"
                 min="0"
                 step="1"
+                required
                 value={umurManual}
                 onChange={(e) => handleUmurManualChange(e.target.value)}
               />
             </div>
             <div className="form-field" style={{ gridColumn: '1', gridRow: '2' }}>
-              <label htmlFor="nama">Nama *</label>
-              <input id="nama" required value={nama} onChange={(e) => setNama(e.target.value)} />
-            </div>
-            <div className="form-field" style={{ gridColumn: '2', gridRow: '2' }}>
-              <label htmlFor="alamat">Alamat</label>
-              <input id="alamat" value={alamat} onChange={(e) => setAlamat(e.target.value)} />
-            </div>
-            <div className="form-field" style={{ gridColumn: '3', gridRow: '2' }}>
-              <label htmlFor="telp">No telepon</label>
-              <input id="telp" value={noTelepon} onChange={(e) => setNoTelepon(e.target.value)} />
-            </div>
-            <div className="form-field" style={{ gridColumn: '1', gridRow: '3' }}>
               <label htmlFor="pengirim">Dokter pengirim *</label>
               <select
                 id="pengirim"
@@ -1312,7 +1292,7 @@ export function PasienPage() {
                 ))}
               </select>
             </div>
-            <div className="form-field" style={{ gridColumn: '2', gridRow: '3' }}>
+            <div className="form-field" style={{ gridColumn: '2', gridRow: '2' }}>
               <label htmlFor="radiolog">Radiolog</label>
               <select id="radiolog" value={radiologId} onChange={(e) => setRadiologId(e.target.value)}>
                 <option value="">Pilih radiolog</option>
@@ -1323,8 +1303,8 @@ export function PasienPage() {
                 ))}
               </select>
             </div>
-            <div className="form-field" style={{ gridColumn: '3', gridRow: '3' }}>
-              <label htmlFor="admin">Admin</label>
+            <div className="form-field" style={{ gridColumn: '3', gridRow: '2' }}>
+              <label htmlFor="admin">Admin Pendaftaran</label>
               <select id="admin" value={admin} onChange={(e) => setAdmin(e.target.value)}>
                 <option value="">Pilih admin</option>
                 {staffList.map((s) => (
@@ -1334,16 +1314,7 @@ export function PasienPage() {
                 ))}
               </select>
             </div>
-            <div className="form-field" style={{ gridColumn: '2 / 5', gridRow: '1' }}>
-              <label htmlFor="klinis">Klinis</label>
-              <textarea
-                id="klinis"
-                rows={2}
-                value={klinis}
-                onChange={(e) => setKlinis(clampClinicalInput(e.target.value))}
-              />
-            </div>
-            <div className="form-field" style={{ gridColumn: '1', gridRow: '4' }}>
+            <div className="form-field" style={{ gridColumn: '4', gridRow: '1' }}>
               <label htmlFor="sharing-select">Pilihan Nominal Sharing</label>
               <select
                 id="sharing-select"
@@ -1372,7 +1343,7 @@ export function PasienPage() {
                 <option value="custom">✎ Input Manual / Lainnya...</option>
               </select>
             </div>
-            <div className="form-field" style={{ gridColumn: '2', gridRow: '4' }}>
+            <div className="form-field" style={{ gridColumn: '1', gridRow: '3' }}>
               <label htmlFor="sharing">Nominal Sharing (Rp)</label>
               <input
                 id="sharing"
@@ -1386,7 +1357,7 @@ export function PasienPage() {
                 }}
               />
             </div>
-            <div className="form-field" style={{ gridColumn: '3', gridRow: '4' }}>
+            <div className="form-field" style={{ gridColumn: '2', gridRow: '3' }}>
               <span className="form-field__static-label">Total Bayar</span>
               <p className="form-field__static-value">{formatRupiah(estimate.totalHarga)}</p>
             </div>
