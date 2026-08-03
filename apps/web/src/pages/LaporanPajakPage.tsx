@@ -54,6 +54,7 @@ export function LaporanPajakPage({ modul = 'RADIOLOGI' }: LaporanPajakPageProps)
   const [editForm, setEditForm] = useState({ jumlahPasien: '0', harga: '0' });
   const [savingEdit, setSavingEdit] = useState(false);
   const [resettingBulan, setResettingBulan] = useState<number | null>(null);
+  const [bulananJumlahPasien, setBulananJumlahPasien] = useState<Record<number, number>>({});
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -74,14 +75,27 @@ export function LaporanPajakPage({ modul = 'RADIOLOGI' }: LaporanPajakPageProps)
     void fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    apiGet<{ bulan: readonly { readonly no: number; readonly jumlahPasien: number }[] }>(
+      `/api/laporan/pajak-bulanan?year=${year}&modul=${modul}`,
+    )
+      .then((res) => {
+        const map: Record<number, number> = {};
+        for (const b of res.bulan) map[b.no] = b.jumlahPasien;
+        setBulananJumlahPasien(map);
+      })
+      .catch(() => setBulananJumlahPasien({}));
+  }, [year, modul]);
+
   const yearOptions = [];
   for (let y = currentYear + 1; y >= currentYear - 5; y--) {
     yearOptions.push(y);
   }
 
   function openEdit(item: BulanPajakItem) {
+    const jumlahPasienOtomatis = bulananJumlahPasien[item.no];
     setEditForm({
-      jumlahPasien: String(item.jumlahPasien),
+      jumlahPasien: String(jumlahPasienOtomatis ?? item.jumlahPasien),
       harga: String(item.harga),
     });
     setError(null);
@@ -363,6 +377,9 @@ export function LaporanPajakPage({ modul = 'RADIOLOGI' }: LaporanPajakPageProps)
                 value={editForm.jumlahPasien}
                 onChange={(e) => setEditForm((f) => ({ ...f, jumlahPasien: e.target.value }))}
               />
+              <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                Otomatis terisi dari Jumlah Pasien di Laporan Pajak Bulanan — bisa diubah manual bila perlu.
+              </span>
             </div>
             <div className="form-field">
               <label htmlFor="pajak-edit-harga">Harga (Rata-rata, Rp) *</label>
