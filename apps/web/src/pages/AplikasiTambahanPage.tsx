@@ -470,7 +470,7 @@ export function AplikasiTambahanPage() {
                   <label htmlFor="at-klinis">Klinis</label>
                   <input id="at-klinis" value={form.klinis} onChange={(e) => setForm((f) => ({ ...f, klinis: e.target.value }))} />
                 </div>
-                <div className="at-pj-box">PJ</div>
+                <div />
               </div>
 
               <div className="at-form-row">
