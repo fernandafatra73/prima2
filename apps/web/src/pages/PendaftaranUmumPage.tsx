@@ -79,7 +79,7 @@ export function PendaftaranUmumPage() {
   const reload = useMutationReload(reloadList);
 
   const { items: dokterList } = usePaginatedList<{ id: string; nama: string }>('/api/dokter', { limit: '100' });
-  const { items: adminList } = usePaginatedList<{ id: string; nama: string }>('/api/staff', { role: 'ADMIN', limit: '100' });
+  const { items: adminList } = usePaginatedList<{ id: string; nama: string }>('/api/admin-pendaftaran', { limit: '100' });
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<PendaftaranUmumItem | null>(null);
@@ -628,7 +628,7 @@ export function PendaftaranUmumPage() {
 
                 <div>
                   <label htmlFor="admin" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Petugas Admin Penerima
+                    Admin Pendaftaran
                   </label>
                   <select
                     id="admin"
