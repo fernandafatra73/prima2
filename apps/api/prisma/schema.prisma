@@ -208,6 +208,49 @@ model LaporanPajakOverride {
   @@unique([year, bulan, modul])
 }
 
+/// Pembukuan bulanan (Pendapatan Jasa Pelayanan, Beban Usaha, Penyusutan &
+/// mini Neraca) per bulan per tahun. Jumlah Pasien TIDAK disimpan di sini,
+/// selalu dihitung ulang dari arsip Duplikat (sama seperti Laporan Pajak).
+model LaporanPajakBulanan {
+  id                  String    @id @default(cuid())
+  year                Int
+  bulan               Int
+  modul               AsalModul @default(RADIOLOGI)
+
+  harga               Decimal   @default(0)
+
+  biayaSewaTempat     Decimal   @default(0)
+  biayaListrikAir     Decimal   @default(0)
+  gajiFernanda        Decimal   @default(0)
+  gajiChalimatusadiah Decimal   @default(0)
+  gajiRiki            Decimal   @default(0)
+  gajiAgung           Decimal   @default(0)
+  gajiKaryawan1       Decimal   @default(0)
+  gajiKaryawan2       Decimal   @default(0)
+  bahanRoentgen       Decimal   @default(0)
+  peralatanRoentgen   Decimal   @default(0)
+  penyusutanManual    Decimal   @default(0)
+  perbaikanAlat       Decimal   @default(0)
+
+  hargaPeralatan      Decimal   @default(0)
+  tarifPenyusutanTahunanPersen Decimal @default(10)
+
+  piutangUsaha        Decimal   @default(0)
+  perlengkapan        Decimal   @default(0)
+  utangUsaha          Decimal   @default(0)
+
+  /// Hanya dipakai/ditampilkan untuk bulan 1 (Januari) sebagai titik awal
+  /// rantai Modal & Kas berjalan; bulan berikutnya dihitung otomatis.
+  modalAwalTahun               Decimal @default(0)
+  kasAwalTahun                  Decimal @default(0)
+  akumulasiPenyusutanAwalTahun  Decimal @default(0)
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([year, bulan, modul])
+}
+
 model LaporanNeraca {
   id                 String   @id @default(cuid())
   year               Int      @unique
@@ -595,6 +638,29 @@ model KeuanganTransaksi {
   referensi  String?  @default("")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model AplikasiTambahan {
+  id          String   @id @default(cuid())
+  kodePasien  String   @unique
+  nama        String
+  umur        String?
+  umurSatuan  String?  @default("Thn")
+  noTelp      String?
+  alamat      String?
+  pengirim    String?
+  pemeriksaan String?
+  klinis      String?
+  sharing     String?
+  harga       Decimal  @default(0)
+  kesan1      String?
+  kesan2      String?
+  kesan3      String?
+  kesan4      String?
+  staffTag    String?
+  tanggal     DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 

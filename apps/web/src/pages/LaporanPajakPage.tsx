@@ -33,8 +33,13 @@ interface LaporanPajakData {
   readonly totalPajak: number;
 }
 
-export function LaporanPajakPage() {
+interface LaporanPajakPageProps {
+  readonly modul?: 'RADIOLOGI' | 'LABORATORIUM';
+}
+
+export function LaporanPajakPage({ modul = 'RADIOLOGI' }: LaporanPajakPageProps) {
   const currentYear = new Date().getFullYear();
+  const moduleLabel = modul === 'RADIOLOGI' ? 'Radiologi' : 'Laboratorium';
   const [year, setYear] = useState<number>(currentYear);
   const [data, setData] = useState<LaporanPajakData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,7 +60,7 @@ export function LaporanPajakPage() {
     setError(null);
     try {
       const res = await apiGet<LaporanPajakData>(
-        `/api/laporan/pajak?year=${year}&modul=RADIOLOGI`,
+        `/api/laporan/pajak?year=${year}&modul=${modul}`,
       );
       setData(res);
     } catch (err) {
@@ -63,7 +68,7 @@ export function LaporanPajakPage() {
     } finally {
       setLoading(false);
     }
-  }, [year]);
+  }, [year, modul]);
 
   useEffect(() => {
     void fetchData();
@@ -94,7 +99,7 @@ export function LaporanPajakPage() {
       await apiPatch('/api/laporan/pajak/override', {
         year,
         bulan: editing.no,
-        modul: 'RADIOLOGI',
+        modul,
         jumlahPasien: Number(editForm.jumlahPasien) || 0,
         harga: Number(editForm.harga) || 0,
       });
@@ -111,7 +116,7 @@ export function LaporanPajakPage() {
     setResettingBulan(item.no);
     setError(null);
     try {
-      await apiDelete(`/api/laporan/pajak/override?year=${year}&bulan=${item.no}&modul=RADIOLOGI`);
+      await apiDelete(`/api/laporan/pajak/override?year=${year}&bulan=${item.no}&modul=${modul}`);
       await fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal reset ke hitungan otomatis');
@@ -124,6 +129,7 @@ export function LaporanPajakPage() {
     const logoSrc = await loadLogoDataUrl().catch(() => '');
     return {
       logoSrc,
+      moduleLabel,
       year,
       tanggalCetak: new Date().toLocaleDateString('id-ID', {
         day: '2-digit',
@@ -152,7 +158,7 @@ export function LaporanPajakPage() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `Laporan_Pajak_Radiologi_${year}.pdf`;
+      anchor.download = `Laporan_Pajak_${moduleLabel}_${year}.pdf`;
       anchor.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -175,8 +181,8 @@ export function LaporanPajakPage() {
   return (
     <>
       <ListPageShell
-        title="Laporan Pajak Radiologi"
-        subtitle="Rekap bulanan Jumlah Pasien & Total Penerimaan Radiologi beserta estimasi PPh Final UMKM (0.5% dari Total Penerimaan, sesuai PP 23/2018), dihitung dari arsip Duplikat Radiologi — bisa dikoreksi manual per bulan"
+        title={`Laporan Pajak ${moduleLabel}`}
+        subtitle={`Rekap bulanan Jumlah Pasien & Total Penerimaan ${moduleLabel} beserta estimasi PPh Final UMKM (0.5% dari Total Penerimaan, sesuai PP 23/2018), dihitung dari arsip Duplikat ${moduleLabel} — bisa dikoreksi manual per bulan`}
         metrics={[
           {
             label: 'Total Pasien Setahun',
@@ -412,9 +418,9 @@ export function LaporanPajakPage() {
       <SharingPdfPreviewModal
         open={previewModalOpen}
         blob={previewBlob}
-        filename={`Laporan_Pajak_Radiologi_${year}.pdf`}
+        filename={`Laporan_Pajak_${moduleLabel}_${year}.pdf`}
         onClose={() => setPreviewModalOpen(false)}
-        title="Pratinjau Laporan Pajak Radiologi"
+        title={`Pratinjau Laporan Pajak ${moduleLabel}`}
       />
     </>
   );

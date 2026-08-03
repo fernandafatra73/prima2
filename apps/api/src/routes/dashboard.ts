@@ -416,5 +416,153 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
     });
     return reply.status(200).send({ item: serializeNeraca(record) });
   });
+
+  const PAJAK_BULANAN_FIELDS = [
+    'harga',
+    'biayaSewaTempat', 'biayaListrikAir',
+    'gajiFernanda', 'gajiChalimatusadiah', 'gajiRiki', 'gajiAgung', 'gajiKaryawan1', 'gajiKaryawan2',
+    'bahanRoentgen', 'peralatanRoentgen', 'penyusutanManual', 'perbaikanAlat',
+    'hargaPeralatan', 'tarifPenyusutanTahunanPersen',
+    'piutangUsaha', 'perlengkapan', 'utangUsaha',
+    'modalAwalTahun', 'kasAwalTahun', 'akumulasiPenyusutanAwalTahun',
+  ] as const;
+  type PajakBulananField = (typeof PAJAK_BULANAN_FIELDS)[number];
+
+  app.get<{ Querystring: { year?: string; modul?: string } }>('/api/laporan/pajak-bulanan', async (req) => {
+    const yearStr = req.query.year || new Date().getFullYear().toString();
+    const year = parseInt(yearStr, 10);
+    if (isNaN(year)) {
+      return { error: 'Tahun tidak valid' };
+    }
+    const modul = req.query.modul === 'LABORATORIUM' ? 'LABORATORIUM' : 'RADIOLOGI';
+
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+
+    const [pasienRecords, rows] = await Promise.all([
+      prisma.pasienDuplikat.findMany({
+        where: { asalModul: modul, registeredAt: { gte: startOfYear, lte: endOfYear } },
+        select: { registeredAt: true },
+      }),
+      prisma.laporanPajakBulanan.findMany({ where: { year, modul } }),
+    ]);
+
+    const jumlahPasienPerBulan = Array.from({ length: 12 }, () => 0);
+    for (const r of pasienRecords) {
+      jumlahPasienPerBulan[r.registeredAt.getMonth()] += 1;
+    }
+
+    const rowByBulan = new Map(rows.map((r) => [r.bulan, r]));
+
+    let prevModalAkhir = 0;
+    let prevKasAkhir = 0;
+    let prevAkumulasiPenyusutan = 0;
+
+    const bulanData = [];
+    for (let bulanKe = 1; bulanKe <= 12; bulanKe++) {
+      const row = rowByBulan.get(bulanKe);
+      const jumlahPasien = jumlahPasienPerBulan[bulanKe - 1]!;
+
+      const harga = toNumber(row?.harga ?? new Decimal(0));
+      const biayaSewaTempat = toNumber(row?.biayaSewaTempat ?? new Decimal(0));
+      const biayaListrikAir = toNumber(row?.biayaListrikAir ?? new Decimal(0));
+      const gajiFernanda = toNumber(row?.gajiFernanda ?? new Decimal(0));
+      const gajiChalimatusadiah = toNumber(row?.gajiChalimatusadiah ?? new Decimal(0));
+      const gajiRiki = toNumber(row?.gajiRiki ?? new Decimal(0));
+      const gajiAgung = toNumber(row?.gajiAgung ?? new Decimal(0));
+      const gajiKaryawan1 = toNumber(row?.gajiKaryawan1 ?? new Decimal(0));
+      const gajiKaryawan2 = toNumber(row?.gajiKaryawan2 ?? new Decimal(0));
+      const bahanRoentgen = toNumber(row?.bahanRoentgen ?? new Decimal(0));
+      const peralatanRoentgen = toNumber(row?.peralatanRoentgen ?? new Decimal(0));
+      const penyusutanManual = toNumber(row?.penyusutanManual ?? new Decimal(0));
+      const perbaikanAlat = toNumber(row?.perbaikanAlat ?? new Decimal(0));
+      const hargaPeralatan = toNumber(row?.hargaPeralatan ?? new Decimal(0));
+      const tarifPenyusutanTahunanPersen = toNumber(row?.tarifPenyusutanTahunanPersen ?? new Decimal(10));
+      const piutangUsaha = toNumber(row?.piutangUsaha ?? new Decimal(0));
+      const perlengkapan = toNumber(row?.perlengkapan ?? new Decimal(0));
+      const utangUsaha = toNumber(row?.utangUsaha ?? new Decimal(0));
+      const modalAwalTahun = toNumber(row?.modalAwalTahun ?? new Decimal(0));
+      const kasAwalTahun = toNumber(row?.kasAwalTahun ?? new Decimal(0));
+      const akumulasiPenyusutanAwalTahun = toNumber(row?.akumulasiPenyusutanAwalTahun ?? new Decimal(0));
+
+      const pendapatan = harga * jumlahPasien;
+      const totalBebanUsaha =
+        biayaSewaTempat + biayaListrikAir + gajiFernanda + gajiChalimatusadiah + gajiRiki + gajiAgung +
+        gajiKaryawan1 + gajiKaryawan2 + bahanRoentgen + peralatanRoentgen + penyusutanManual + perbaikanAlat;
+      const labaBersih = pendapatan - totalBebanUsaha;
+
+      const penyusutanPeralatanBulan = (hargaPeralatan * (tarifPenyusutanTahunanPersen / 100)) / 12;
+
+      const modalAwal = bulanKe === 1 ? modalAwalTahun : prevModalAkhir;
+      const modalAkhir = modalAwal + labaBersih;
+      const kasAwal = bulanKe === 1 ? kasAwalTahun : prevKasAkhir;
+      const kasAkhir = kasAwal + labaBersih;
+      const akumulasiPenyusutanAwal = bulanKe === 1 ? akumulasiPenyusutanAwalTahun : prevAkumulasiPenyusutan;
+      const akumulasiPenyusutanAkhir = akumulasiPenyusutanAwal + penyusutanPeralatanBulan;
+
+      const peralatanNet = hargaPeralatan - akumulasiPenyusutanAkhir;
+      const jumlahAktiva = kasAkhir + piutangUsaha + perlengkapan + peralatanNet;
+      const modalPH = jumlahAktiva - utangUsaha;
+
+      bulanData.push({
+        no: bulanKe,
+        bulan: BULAN_NAMA[bulanKe - 1],
+        jumlahPasien, harga, pendapatan,
+        biayaSewaTempat, biayaListrikAir,
+        gajiFernanda, gajiChalimatusadiah, gajiRiki, gajiAgung, gajiKaryawan1, gajiKaryawan2,
+        bahanRoentgen, peralatanRoentgen, penyusutanManual, perbaikanAlat,
+        totalBebanUsaha, labaBersih,
+        hargaPeralatan, tarifPenyusutanTahunanPersen, penyusutanPeralatanBulan,
+        akumulasiPenyusutanAwal, akumulasiPenyusutanAkhir,
+        modalAwal, modalAkhir,
+        kasAwal, kasAkhir,
+        piutangUsaha, perlengkapan, utangUsaha, peralatanNet,
+        jumlahAktiva, modalPH,
+        modalAwalTahun, kasAwalTahun, akumulasiPenyusutanAwalTahun,
+      });
+
+      prevModalAkhir = modalAkhir;
+      prevKasAkhir = kasAkhir;
+      prevAkumulasiPenyusutan = akumulasiPenyusutanAkhir;
+    }
+
+    return {
+      year,
+      modul,
+      bulan: bulanData,
+      totalJumlahPasien: bulanData.reduce((s, b) => s + b.jumlahPasien, 0),
+      totalPendapatan: bulanData.reduce((s, b) => s + b.pendapatan, 0),
+      totalBebanUsaha: bulanData.reduce((s, b) => s + b.totalBebanUsaha, 0),
+      totalLabaBersih: bulanData.reduce((s, b) => s + b.labaBersih, 0),
+    };
+  });
+
+  app.patch<{
+    Body: {
+      year: number;
+      bulan: number;
+      modul?: string;
+    } & Partial<Record<PajakBulananField, number>>;
+  }>('/api/laporan/pajak-bulanan', async (req, reply) => {
+    const b = req.body;
+    if (!Number.isInteger(b.year) || !Number.isInteger(b.bulan) || b.bulan < 1 || b.bulan > 12) {
+      return badRequest(reply, 'year dan bulan (1-12) wajib diisi');
+    }
+    const modul = b.modul === 'LABORATORIUM' ? 'LABORATORIUM' : 'RADIOLOGI';
+
+    const data: Partial<Record<PajakBulananField, number>> = {};
+    for (const field of PAJAK_BULANAN_FIELDS) {
+      if (b[field] !== undefined) {
+        data[field] = b[field];
+      }
+    }
+
+    const item = await prisma.laporanPajakBulanan.upsert({
+      where: { year_bulan_modul: { year: b.year, bulan: b.bulan, modul } },
+      create: { year: b.year, bulan: b.bulan, modul, ...data },
+      update: data,
+    });
+    return reply.status(200).send({ item });
+  });
 }
 

@@ -44,7 +44,9 @@ import { RolePage } from './pages/RolePage.tsx';
 import { SharingPage } from './pages/SharingPage.tsx';
 import { LaporanTahunanPage } from './pages/LaporanTahunanPage.tsx';
 import { LaporanPajakPage } from './pages/LaporanPajakPage.tsx';
+import { LaporanPajakBulananPage } from './pages/LaporanPajakBulananPage.tsx';
 import { LaporanNeracaPage } from './pages/LaporanNeracaPage.tsx';
+import { AplikasiTambahanPage } from './pages/AplikasiTambahanPage.tsx';
 import { TempletPage } from './pages/TempletPage.tsx';
 import { AnalisaFotoRontgenPage } from './pages/AnalisaFotoRontgenPage.tsx';
 import { AdminPage } from './pages/AdminPage.tsx';
@@ -127,8 +129,16 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN') {
       return <LaporanTahunanPage />;
     case 'laporan-pajak':
       return <LaporanPajakPage />;
+    case 'laporan-pajak-bulanan':
+      return <LaporanPajakBulananPage />;
+    case 'laporan-pajak-lab':
+      return <LaporanPajakPage modul="LABORATORIUM" />;
+    case 'laporan-pajak-bulanan-lab':
+      return <LaporanPajakBulananPage modul="LABORATORIUM" />;
     case 'laporan-neraca':
       return <LaporanNeracaPage />;
+    case 'aplikasi-tambahan':
+      return <AplikasiTambahanPage />;
     case 'radiolog':
       return <RadiologWorkPage />;
     case 'radiolog-duplikat':

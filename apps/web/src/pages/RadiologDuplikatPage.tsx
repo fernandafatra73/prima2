@@ -103,6 +103,7 @@ export function RadiologDuplikatPage() {
       noKwitansi: item.regCode,
       tanggal: formatDateShort(item.createdAt),
       namaPasien: item.nama,
+      umur: formatUmurDetail(item.tanggalLahir, item.createdAt),
       alamat: item.alamat || '—',
       dokterPengirim: item.pengirimNama || '—',
       items: [

@@ -164,3 +164,16 @@ export function IconBell({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconPuzzle({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M9 4h3.5a1.5 1.5 0 0 1 1.5 1.5v1.7a1.3 1.3 0 0 0 1.9 1.16A1.8 1.8 0 1 1 17.6 12a1.3 1.3 0 0 0-1.1 2v1.5A1.5 1.5 0 0 1 15 17h-2v-1.7a1.8 1.8 0 1 0-3.6 0V17H6.5A1.5 1.5 0 0 1 5 15.5V13h1.7a1.8 1.8 0 1 0 0-3.6H5V7.5A1.5 1.5 0 0 1 6.5 6H9V4Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

@@ -11,6 +11,7 @@ export interface KwitansiReportData {
   readonly noKwitansi: string;
   readonly tanggal: string;
   readonly namaPasien: string;
+  readonly umur: string;
   readonly alamat: string;
   readonly dokterPengirim: string;
   readonly items: readonly KwitansiItem[];
@@ -252,7 +253,9 @@ export function KwitansiReportDocument({ data }: { readonly data: KwitansiReport
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Telah terima dari</Text>
               <Text style={styles.infoColon}>:</Text>
-              <Text style={styles.infoValue}>{truncatePdfCell(data.namaPasien, 60)}</Text>
+              <Text style={styles.infoValue}>
+                {truncatePdfCell(data.umur ? `${data.namaPasien}, ${data.umur}` : data.namaPasien, 60)}
+              </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Alamat</Text>

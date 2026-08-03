@@ -9,7 +9,7 @@ import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.t
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
 import { apiDelete, apiGet, apiPatch } from '../lib/api.ts';
-import { formatDateShort, formatRupiah } from '../lib/format.ts';
+import { formatDateShort, formatRupiah, formatUmurDetail } from '../lib/format.ts';
 import { terbilangRupiah } from '../lib/terbilang.ts';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
 import { KwitansiReportDocument, type KwitansiReportData } from '../pdf/KwitansiReportDocument.tsx';
@@ -19,6 +19,7 @@ interface KwitansiPasienItem {
   readonly id: string;
   readonly regCode: string;
   readonly nama: string;
+  readonly tanggalLahir: string;
   readonly alamat: string | null;
   readonly createdAt: string;
   readonly admin: string | null;
@@ -138,6 +139,7 @@ export function KwitansiRadiologiPage() {
       noKwitansi: p.regCode,
       tanggal: formatDateShort(p.createdAt),
       namaPasien: p.nama,
+      umur: formatUmurDetail(p.tanggalLahir),
       alamat: p.alamat || '—',
       dokterPengirim: p.pengirim.nama,
       items: p.pemeriksaan.map((x) => ({ nama: x.nama, hargaFormatted: formatRupiah(x.harga) })),

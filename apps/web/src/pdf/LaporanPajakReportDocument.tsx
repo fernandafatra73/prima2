@@ -18,6 +18,7 @@ export interface LaporanPajakReportItem {
 
 export interface LaporanPajakReportData {
   readonly logoSrc: string;
+  readonly moduleLabel: string;
   readonly year: number;
   readonly tanggalCetak: string;
   readonly items: readonly LaporanPajakReportItem[];
@@ -173,7 +174,7 @@ export function LaporanPajakReportDocument({
   readonly data: LaporanPajakReportData;
 }) {
   return (
-    <Document title={`Laporan_Pajak_Radiologi_${data.year}.pdf`}>
+    <Document title={`Laporan_Pajak_${data.moduleLabel}_${data.year}.pdf`}>
       <Page size="A4" style={styles.page}>
         <View style={styles.frame}>
           <View style={styles.headerRow}>
@@ -188,7 +189,7 @@ export function LaporanPajakReportDocument({
           <View style={styles.divider} />
 
           <View style={styles.titleSection}>
-            <Text style={styles.reportTitle}>Laporan Pajak Radiologi</Text>
+            <Text style={styles.reportTitle}>Laporan Pajak {data.moduleLabel}</Text>
           </View>
 
           <View style={styles.infoGrid}>
@@ -244,9 +245,9 @@ export function LaporanPajakReportDocument({
 
           <Text style={styles.disclaimer}>
             * Pajak dihitung 0.5% dari Total Penerimaan (estimasi PPh Final UMKM sesuai PP
-            23/2018), berdasarkan data pasien radiologi yang tercatat di sistem (arsip Duplikat
-            Radiologi). Untuk pelaporan &amp; pembayaran resmi, gunakan portal DJP di
-            sse2.pajak.go.id.
+            23/2018), berdasarkan data pasien {data.moduleLabel.toLowerCase()} yang tercatat di
+            sistem (arsip Duplikat {data.moduleLabel}). Untuk pelaporan &amp; pembayaran resmi,
+            gunakan portal DJP di sse2.pajak.go.id.
           </Text>
 
           <View style={styles.signatureSection}>

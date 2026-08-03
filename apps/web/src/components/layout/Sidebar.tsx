@@ -21,6 +21,7 @@ import {
   IconStethoscope,
   IconTag,
   IconUsers,
+  IconPuzzle,
 } from '../icons/NavIcons.tsx';
 import './layout.css';
 
@@ -148,6 +149,17 @@ export function Sidebar({ activeId, onNavigate, role }: SidebarProps) {
             >
               <IconDashboard className="app-sidebar__icon" />
               <span className="app-sidebar__label">Dashboard</span>
+            </button>
+          </li>
+
+          <li>
+            <button
+              type="button"
+              className={`app-sidebar__link${activeId === 'aplikasi-tambahan' ? ' app-sidebar__link--active' : ''}`}
+              onClick={() => onNavigate('aplikasi-tambahan')}
+            >
+              <IconPuzzle className="app-sidebar__icon" />
+              <span className="app-sidebar__label">Aplikasi Tambahan</span>
             </button>
           </li>
 
