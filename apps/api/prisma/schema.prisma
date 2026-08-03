@@ -108,6 +108,15 @@ model AdminPendaftaran {
   updatedAt     DateTime @updatedAt
 }
 
+model LogoPerusahaan {
+  id               String   @id @default(cuid())
+  namaKlinik       String
+  logoTandaTangan  String?
+  logoPerusahaan   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 model DaftarTelpon {
   id            String   @id @default(cuid())
   nama          String

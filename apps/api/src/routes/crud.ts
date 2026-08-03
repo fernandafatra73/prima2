@@ -12,6 +12,7 @@ import {
   jenisListWhere,
   karyawanKlinikListWhere,
   kesanListWhere,
+  logoPerusahaanListWhere,
   pasienAntreanWhere,
   pasienDuplikatListWhere,
   pasienListWhere,
@@ -2732,6 +2733,60 @@ export async function registerCrudRoutes(app: FastifyInstance) {
     await prisma.tandaTanganElektronik.delete({ where: { id: req.params.id } });
     return { ok: true };
   });
+
+  app.get<{ Querystring: ListQuery }>('/api/logo-perusahaan', async (req) => {
+    const { page, limit, skip } = parsePagination(req.query);
+    const where = logoPerusahaanListWhere(req.query.q);
+    const [total, items] = await Promise.all([
+      prisma.logoPerusahaan.count({ where }),
+      prisma.logoPerusahaan.findMany({
+        where,
+        orderBy: { namaKlinik: 'asc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+    return { items, pagination: buildPaginationMeta(total, page, limit) };
+  });
+
+  app.post<{
+    Body: { namaKlinik: string; logoTandaTangan?: string | null; logoPerusahaan?: string | null };
+  }>('/api/logo-perusahaan', async (req, reply) => {
+    if (!req.body.namaKlinik?.trim()) return badRequest(reply, 'namaKlinik wajib diisi');
+    const item = await prisma.logoPerusahaan.create({
+      data: {
+        namaKlinik: req.body.namaKlinik.trim(),
+        logoTandaTangan: req.body.logoTandaTangan ?? null,
+        logoPerusahaan: req.body.logoPerusahaan ?? null,
+      },
+    });
+    return reply.status(201).send({ item });
+  });
+
+  app.patch<{
+    Params: { id: string };
+    Body: { namaKlinik?: string; logoTandaTangan?: string | null; logoPerusahaan?: string | null };
+  }>('/api/logo-perusahaan/:id', async (req, reply) => {
+    const existing = await prisma.logoPerusahaan.findUnique({ where: { id: req.params.id } });
+    if (!existing) return reply.status(404).send({ error: 'Logo perusahaan tidak ditemukan' });
+    const item = await prisma.logoPerusahaan.update({
+      where: { id: req.params.id },
+      data: {
+        namaKlinik: req.body.namaKlinik?.trim() ?? existing.namaKlinik,
+        logoTandaTangan:
+          req.body.logoTandaTangan !== undefined ? req.body.logoTandaTangan : existing.logoTandaTangan,
+        logoPerusahaan:
+          req.body.logoPerusahaan !== undefined ? req.body.logoPerusahaan : existing.logoPerusahaan,
+      },
+    });
+    return { item };
+  });
+
+  app.delete<{ Params: { id: string } }>('/api/logo-perusahaan/:id', async (req) => {
+    await prisma.logoPerusahaan.delete({ where: { id: req.params.id } });
+    return { ok: true };
+  });
+
   app.get<{ Querystring: ListQuery }>('/api/daftar-telpon', async (req) => {
     const { page, limit, skip } = parsePagination(req.query);
     const where = daftarTelponListWhere(req.query.q);

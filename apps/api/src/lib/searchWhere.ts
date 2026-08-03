@@ -96,6 +96,14 @@ export function adminPendaftaranListWhere(q?: string): Prisma.AdminPendaftaranWh
   };
 }
 
+export function logoPerusahaanListWhere(q?: string): Prisma.LogoPerusahaanWhereInput {
+  const term = searchTerm(q);
+  if (!term) return {};
+  return {
+    OR: [{ namaKlinik: { contains: term } }],
+  };
+}
+
 export function tandaTanganElektronikListWhere(q?: string): Prisma.TandaTanganElektronikWhereInput {
   const term = searchTerm(q);
   if (!term) return {};
