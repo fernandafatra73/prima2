@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react';
 import { PDFViewer, pdf } from '@react-pdf/renderer';
 import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { Modal } from '../components/ui/Modal.tsx';
+import { ModalFormFooter } from '../components/ui/ModalFormFooter.tsx';
+import { TableRowActions } from '../components/ui/TableRowActions.tsx';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
+import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
+import { apiPatch } from '../lib/api.ts';
 import { formatDateShort, formatRupiah } from '../lib/format.ts';
 import { terbilangRupiah } from '../lib/terbilang.ts';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
@@ -25,15 +29,51 @@ interface PasienDuplikatLabItem {
 export function KwitansiLaboratoriumPage() {
   const { search, setSearch } = useListSearch();
   const queryParams = useListQueryParams({ modul: 'LABORATORIUM' }, search);
-  const { items, pagination, setPage, loading, error, reload } =
+  const { items, pagination, setPage, loading, error, reload: reloadList } =
     usePaginatedList<PasienDuplikatLabItem>('/api/pasien-duplikat', queryParams);
+  const reload = useMutationReload(reloadList);
 
   const [logoSrc, setLogoSrc] = useState('');
   const [previewItem, setPreviewItem] = useState<PasienDuplikatLabItem | null>(null);
 
+  const [editItem, setEditItem] = useState<PasienDuplikatLabItem | null>(null);
+  const [editPemeriksaanNama, setEditPemeriksaanNama] = useState('');
+  const [editTotalHarga, setEditTotalHarga] = useState('0');
+  const [editPaymentStatus, setEditPaymentStatus] = useState<'BELUM_LUNAS' | 'LUNAS'>('BELUM_LUNAS');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
   useEffect(() => {
     void loadLogoDataUrl().then(setLogoSrc).catch(() => setLogoSrc(''));
   }, []);
+
+  function openEdit(item: PasienDuplikatLabItem) {
+    setEditItem(item);
+    setEditPemeriksaanNama(item.pemeriksaanNama);
+    setEditTotalHarga(item.totalHarga);
+    setEditPaymentStatus(item.paymentStatus);
+    setEditError(null);
+  }
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editItem) return;
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      await apiPatch(`/api/pasien-duplikat/${editItem.id}`, {
+        pemeriksaanNama: editPemeriksaanNama,
+        totalHarga: Number(editTotalHarga) || 0,
+        paymentStatus: editPaymentStatus,
+      });
+      setEditItem(null);
+      await reload();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Gagal menyimpan perubahan kwitansi');
+    } finally {
+      setEditSaving(false);
+    }
+  }
 
   function buildKwitansiData(p: PasienDuplikatLabItem): KwitansiReportData {
     return {
@@ -95,12 +135,13 @@ export function KwitansiLaboratoriumPage() {
               <th style={{ width: '140px', textAlign: 'right' }}>Total Biaya</th>
               <th style={{ width: '110px', textAlign: 'center' }}>Status</th>
               <th style={{ width: '130px', textAlign: 'center' }}>Kwitansi</th>
+              <th style={{ width: '100px', textAlign: 'center' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
                   Belum ada data arsip registrasi laboratorium.
                 </td>
               </tr>
@@ -156,6 +197,12 @@ export function KwitansiLaboratoriumPage() {
                         🧾 Kwitansi
                       </button>
                     </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <TableRowActions
+                        onEdit={() => openEdit(p)}
+                        editLabel="Ubah status bayar & pemeriksaan"
+                      />
+                    </td>
                   </tr>
                 );
               })
@@ -186,6 +233,59 @@ export function KwitansiLaboratoriumPage() {
               <KwitansiReportDocument data={buildKwitansiData(previewItem)} />
             </PDFViewer>
           </div>
+        </Modal>
+      )}
+
+      {editItem && (
+        <Modal
+          title={`Ubah Kwitansi — ${editItem.regCode}`}
+          open={true}
+          onClose={() => setEditItem(null)}
+          size="lg"
+        >
+          <form onSubmit={(e) => void handleSaveEdit(e)}>
+            {editError && <p className="alert alert--error">{editError}</p>}
+
+            <div className="form-field" style={{ marginBottom: '1rem' }}>
+              <label htmlFor="edit-pemeriksaan-nama">Pemeriksaan</label>
+              <input
+                id="edit-pemeriksaan-nama"
+                type="text"
+                value={editPemeriksaanNama}
+                onChange={(e) => setEditPemeriksaanNama(e.target.value)}
+              />
+            </div>
+
+            <div className="form-field" style={{ marginBottom: '1rem' }}>
+              <label htmlFor="edit-total-harga">Total Biaya (Rp)</label>
+              <input
+                id="edit-total-harga"
+                type="number"
+                min="0"
+                step="1"
+                value={editTotalHarga}
+                onChange={(e) => setEditTotalHarga(e.target.value)}
+              />
+            </div>
+
+            <div className="form-field" style={{ marginBottom: '1rem' }}>
+              <label htmlFor="edit-payment-status">Status Pembayaran</label>
+              <select
+                id="edit-payment-status"
+                value={editPaymentStatus}
+                onChange={(e) => setEditPaymentStatus(e.target.value as 'BELUM_LUNAS' | 'LUNAS')}
+              >
+                <option value="BELUM_LUNAS">BELUM LUNAS</option>
+                <option value="LUNAS">LUNAS</option>
+              </select>
+            </div>
+
+            <ModalFormFooter
+              onCancel={() => setEditItem(null)}
+              submitLabel="Simpan Perubahan"
+              loading={editSaving}
+            />
+          </form>
         </Modal>
       )}
     </>
