@@ -373,6 +373,7 @@ export function LaboratoriumPage() {
       setRegNoTelepon('');
       setRegKlinis('');
       setRegTanggalLahir('');
+      setRegUmurManual('');
       setRegPengirimId('');
       setRegSharingAmount('0');
       setRegAdmin('');
@@ -388,9 +389,13 @@ export function LaboratoriumPage() {
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
-        setRegTanggalLahir(`${yyyy}-${mm}-${dd}`);
+        const tgl = `${yyyy}-${mm}-${dd}`;
+        setRegTanggalLahir(tgl);
+        const years = computeUmurYears(tgl);
+        setRegUmurManual(years === null ? '' : String(years));
       } catch {
         setRegTanggalLahir('');
+        setRegUmurManual('');
       }
     } else if (p.umur) {
       const match = p.umur.match(/(\d+)/);
@@ -398,11 +403,14 @@ export function LaboratoriumPage() {
         const years = parseInt(match[1], 10);
         const y = new Date().getFullYear() - years;
         setRegTanggalLahir(`${y}-01-01`);
+        setRegUmurManual(String(years));
       } else {
         setRegTanggalLahir('');
+        setRegUmurManual('');
       }
     } else {
       setRegTanggalLahir('');
+      setRegUmurManual('');
     }
     if (p.dokterPengirim) {
       const dok = dokterList.find(d => d.nama.toLowerCase().includes(p.dokterPengirim!.toLowerCase()));
@@ -1347,35 +1355,16 @@ export function LaboratoriumPage() {
             </div>
 
             <div className="form-field">
-              <label htmlFor="rTgl">Tanggal Lahir *</label>
-              <input
-                id="rTgl"
-                type="date"
-                required
-                value={regTanggalLahir}
-                onChange={(e) => {
-                  setRegTanggalLahir(e.target.value);
-                  const years = computeUmurYears(e.target.value);
-                  setRegUmurManual(years === null ? '' : String(years));
-                }}
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="rUmurManual">Umur (tahun)</label>
+              <label htmlFor="rUmurManual">Umur (tahun) *</label>
               <input
                 id="rUmurManual"
                 type="number"
                 min="0"
                 step="1"
+                required
                 value={regUmurManual}
                 onChange={(e) => handleRegUmurManualChange(e.target.value)}
               />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="rTelp">No. Telepon</label>
-              <input id="rTelp" value={regNoTelepon} onChange={(e) => setRegNoTelepon(e.target.value)} />
             </div>
 
             <div className="form-field">
@@ -1393,31 +1382,9 @@ export function LaboratoriumPage() {
               </select>
             </div>
 
-            <div className="form-field">
-              <label htmlFor="rAlamat">Alamat Lengkap</label>
-              <textarea
-                id="rAlamat"
-                rows={1}
-                style={{ minHeight: 0 }}
-                value={regAlamat}
-                onChange={(e) => setRegAlamat(e.target.value)}
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="rKlinis">Klinis (Keterangan)</label>
-              <textarea
-                id="rKlinis"
-                rows={1}
-                style={{ minHeight: 0 }}
-                value={regKlinis}
-                onChange={(e) => setRegKlinis(e.target.value)}
-              />
-            </div>
-
             <div className="form-field form-field--full" style={{ padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)' }}>
               <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>2. Pilih Jenis Pemeriksaan Lab (Paket) *</label>
-              <div className="checkbox-list" style={{ flexDirection: 'row', flexWrap: 'wrap', maxHeight: '150px', overflowY: 'auto' }}>
+              <div className="checkbox-list" style={{ flexDirection: 'row', flexWrap: 'wrap', maxHeight: '420px', overflowY: 'auto' }}>
                 {paketList.map((p) => (
                   <label key={p.id} style={{ minWidth: '220px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
