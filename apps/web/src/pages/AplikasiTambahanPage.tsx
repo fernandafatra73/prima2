@@ -100,6 +100,7 @@ export function AplikasiTambahanPage() {
 
   const [form, setForm] = useState(emptyForm);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [noRegistrasi, setNoRegistrasi] = useState('');
   const [staffTag, setStaffTag] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('Aplikasi');
@@ -127,10 +128,12 @@ export function AplikasiTambahanPage() {
     setSelectedId(null);
     setStaffTag('');
     setShowTerbilang(false);
+    setNoRegistrasi('');
   }
 
   function loadIntoForm(item: AplikasiTambahanItem) {
     setSelectedId(item.id);
+    setNoRegistrasi(item.kodePasien);
     setForm({
       nama: item.nama,
       umurAngka: item.umur ?? '',
@@ -183,6 +186,7 @@ export function AplikasiTambahanPage() {
       resetForm();
       await reload();
       setSelectedId(res.item.id);
+      setNoRegistrasi(res.item.kodePasien);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menyimpan data');
     } finally {
@@ -424,27 +428,13 @@ export function AplikasiTambahanPage() {
             <>
               <div className="at-form-row">
                 <div className="at-field">
+                  <label htmlFor="at-no-registrasi">No Registrasi</label>
+                  <input id="at-no-registrasi" value={noRegistrasi} readOnly placeholder="Otomatis" />
+                </div>
+                <div className="at-field">
                   <label htmlFor="at-nama">Nama</label>
                   <input id="at-nama" value={form.nama} onChange={(e) => setForm((f) => ({ ...f, nama: e.target.value }))} />
                 </div>
-                <div className="at-field">
-                  <label htmlFor="at-pemeriksaan">Pemeriksaan</label>
-                  <input
-                    id="at-pemeriksaan"
-                    list="at-jenis-list"
-                    value={form.pemeriksaan}
-                    onChange={(e) => setForm((f) => ({ ...f, pemeriksaan: e.target.value }))}
-                  />
-                  <datalist id="at-jenis-list">
-                    {jenisList.map((j) => (
-                      <option key={j.id} value={j.nama} />
-                    ))}
-                  </datalist>
-                </div>
-                <div className="at-pj-box">PJ</div>
-              </div>
-
-              <div className="at-form-row">
                 <div className="at-field">
                   <label>Umur</label>
                   <div className="at-field--split">
@@ -459,11 +449,28 @@ export function AplikasiTambahanPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="at-form-row">
+                <div className="at-field">
+                  <label htmlFor="at-pemeriksaan">Pemeriksaan</label>
+                  <input
+                    id="at-pemeriksaan"
+                    list="at-jenis-list"
+                    value={form.pemeriksaan}
+                    onChange={(e) => setForm((f) => ({ ...f, pemeriksaan: e.target.value }))}
+                  />
+                  <datalist id="at-jenis-list">
+                    {jenisList.map((j) => (
+                      <option key={j.id} value={j.nama} />
+                    ))}
+                  </datalist>
+                </div>
                 <div className="at-field">
                   <label htmlFor="at-klinis">Klinis</label>
                   <input id="at-klinis" value={form.klinis} onChange={(e) => setForm((f) => ({ ...f, klinis: e.target.value }))} />
                 </div>
-                <div />
+                <div className="at-pj-box">PJ</div>
               </div>
 
               <div className="at-form-row">

@@ -132,6 +132,11 @@
   background: #fff;
 }
 
+.at-field input[readonly] {
+  background: #eef1f4;
+  color: #64748b;
+}
+
 .at-field--split {
   display: grid;
   grid-template-columns: 1fr 1fr;
