@@ -5,13 +5,23 @@ import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { Modal } from '../components/ui/Modal.tsx';
 import { ModalFormFooter } from '../components/ui/ModalFormFooter.tsx';
 import { TableRowActions } from '../components/ui/TableRowActions.tsx';
+import { useListRefresh } from '../context/ListRefreshContext.tsx';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
-import { apiDelete, apiPatch, apiPost } from '../lib/api.ts';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api.ts';
+import type { PaginatedResponse } from '../lib/pagination.ts';
 import { PendaftaranReportDocument } from '../pdf/PendaftaranReportDocument.tsx';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
 import '../components/ui/ui.css';
+
+function todayDateStr(): string {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 interface PendaftaranUmumItem {
   readonly id: string;
@@ -80,6 +90,18 @@ export function PendaftaranUmumPage() {
 
   const { items: dokterList } = usePaginatedList<{ id: string; nama: string }>('/api/dokter', { limit: '100' });
   const { items: adminList } = usePaginatedList<{ id: string; nama: string }>('/api/admin-pendaftaran', { limit: '100' });
+
+  const { version: listRefreshVersion } = useListRefresh();
+  const [todayCount, setTodayCount] = useState(0);
+
+  useEffect(() => {
+    const today = todayDateStr();
+    apiGet<PaginatedResponse<PendaftaranUmumItem>>(
+      `/api/pendaftaran-umum?startDate=${today}&endDate=${today}&limit=1`,
+    )
+      .then((res) => setTodayCount(res.pagination.total))
+      .catch(() => setTodayCount(0));
+  }, [listRefreshVersion]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<PendaftaranUmumItem | null>(null);
@@ -217,6 +239,12 @@ export function PendaftaranUmumPage() {
           value: String(pagination.total),
           tone: 'blue',
           iconKind: 'users',
+        },
+        {
+          label: 'Nomor Antrian',
+          value: String(todayCount + 1),
+          tone: 'violet',
+          iconKind: 'clock',
         },
       ]}
       searchPlaceholder="Cari nama pasien, no registrasi..."
