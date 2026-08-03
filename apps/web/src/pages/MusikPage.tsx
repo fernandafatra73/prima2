@@ -32,6 +32,11 @@ export function MusikPage() {
   const [lirikDraft, setLirikDraft] = useState('');
   const [savingLirik, setSavingLirik] = useState(false);
 
+  const [addLaguOpen, setAddLaguOpen] = useState(false);
+  const [addLaguFile, setAddLaguFile] = useState<File | null>(null);
+  const [addLaguJudul, setAddLaguJudul] = useState('');
+  const [addLaguLirik, setAddLaguLirik] = useState('');
+
   async function loadPlaylist() {
     setPlaylistLoading(true);
     setPlaylistError(null);
@@ -49,10 +54,26 @@ export function MusikPage() {
     void loadPlaylist();
   }, []);
 
-  function handleAddLagu(e: React.ChangeEvent<HTMLInputElement>) {
+  function openAddLagu() {
+    setAddLaguFile(null);
+    setAddLaguJudul('');
+    setAddLaguLirik('');
+    setPlaylistError(null);
+    setAddLaguOpen(true);
+  }
+
+  function handleAddLaguFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    e.target.value = '';
     if (!file) return;
+    setAddLaguFile(file);
+    if (!addLaguJudul.trim()) {
+      setAddLaguJudul(file.name.replace(/\.[^/.]+$/, ''));
+    }
+  }
+
+  function submitAddLagu(e: React.FormEvent) {
+    e.preventDefault();
+    if (!addLaguFile || !addLaguJudul.trim()) return;
     setPlaylistError(null);
     setUploadingLagu(true);
     const reader = new FileReader();
@@ -60,8 +81,12 @@ export function MusikPage() {
       void (async () => {
         try {
           if (typeof reader.result !== 'string') throw new Error('Gagal membaca file audio');
-          const judul = file.name.replace(/\.[^/.]+$/, '');
-          await apiPost('/api/playlist-lagu', { judul, audioData: reader.result });
+          await apiPost('/api/playlist-lagu', {
+            judul: addLaguJudul.trim(),
+            audioData: reader.result,
+            lirik: addLaguLirik.trim() || undefined,
+          });
+          setAddLaguOpen(false);
           await loadPlaylist();
         } catch (err: unknown) {
           setPlaylistError(err instanceof Error ? err.message : 'Gagal menambah lagu');
@@ -74,7 +99,7 @@ export function MusikPage() {
       setPlaylistError('Gagal membaca file audio');
       setUploadingLagu(false);
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(addLaguFile);
   }
 
   function playPlaylistItem(item: PlaylistItem) {
@@ -379,19 +404,9 @@ export function MusikPage() {
           }}
         >
           <div style={{ fontWeight: 700, color: '#0f172a' }}>Daftar Lagu</div>
-          <label
-            className="btn btn--sm btn--primary"
-            style={{ cursor: uploadingLagu ? 'wait' : 'pointer', margin: 0 }}
-          >
-            {uploadingLagu ? 'Mengunggah…' : '+ Tambah Lagu'}
-            <input
-              type="file"
-              accept="audio/*"
-              onChange={handleAddLagu}
-              disabled={uploadingLagu}
-              style={{ display: 'none' }}
-            />
-          </label>
+          <button type="button" className="btn btn--sm btn--primary" onClick={openAddLagu}>
+            + Tambah Lagu
+          </button>
         </div>
 
         {playlistError && (
@@ -455,6 +470,41 @@ export function MusikPage() {
           </table>
         )}
       </div>
+
+      <Modal open={addLaguOpen} title="Tambah Lagu" onClose={() => setAddLaguOpen(false)}>
+        <form onSubmit={submitAddLagu} className="form-grid">
+          <div className="form-field form-grid--full">
+            <label htmlFor="add-lagu-file">File Audio *</label>
+            <input id="add-lagu-file" type="file" accept="audio/*" required onChange={handleAddLaguFileChange} />
+          </div>
+          <div className="form-field form-grid--full">
+            <label htmlFor="add-lagu-judul">Judul Lagu *</label>
+            <input
+              id="add-lagu-judul"
+              type="text"
+              required
+              value={addLaguJudul}
+              onChange={(e) => setAddLaguJudul(e.target.value)}
+              placeholder="Judul lagu…"
+            />
+          </div>
+          <div className="form-field form-grid--full">
+            <label htmlFor="add-lagu-lirik">Lirik (Opsional)</label>
+            <textarea
+              id="add-lagu-lirik"
+              rows={6}
+              value={addLaguLirik}
+              onChange={(e) => setAddLaguLirik(e.target.value)}
+              placeholder="Tempel/ketik lirik lagu di sini…"
+            />
+          </div>
+          <ModalFormFooter
+            onCancel={() => setAddLaguOpen(false)}
+            submitLabel={uploadingLagu ? 'Mengunggah…' : 'Simpan'}
+            loading={uploadingLagu}
+          />
+        </form>
+      </Modal>
 
       <Modal
         open={lirikEditing !== null}
