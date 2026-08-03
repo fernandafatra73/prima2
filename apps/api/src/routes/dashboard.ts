@@ -275,6 +275,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
     biayaTelpon: number; biayaTransport: number; biayaSewa: number; biayaLainLain: number;
     totalBiaya: number;
     tempatTandaTangan: string; tanggalTandaTangan: string; namaPenandatangan: string;
+    logoPerusahaanId: string | null;
   }
 
   function serializeNeraca(n: {
@@ -289,6 +290,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
     biayaListrik: Decimal; biayaTelpon: Decimal; biayaTransport: Decimal;
     biayaSewa: Decimal; biayaLainLain: Decimal;
     tempatTandaTangan: string; tanggalTandaTangan: Date; namaPenandatangan: string;
+    logoPerusahaanId: string | null;
   }): NeracaSerialized {
     const kas = toNumber(n.kas);
     const bank = toNumber(n.bank);
@@ -338,6 +340,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
       tempatTandaTangan: n.tempatTandaTangan,
       tanggalTandaTangan: n.tanggalTandaTangan.toISOString().slice(0, 10),
       namaPenandatangan: n.namaPenandatangan,
+      logoPerusahaanId: n.logoPerusahaanId,
     };
   }
 
@@ -354,6 +357,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
     tempatTandaTangan: 'Sukabumi',
     tanggalTandaTangan: new Date().toISOString().slice(0, 10),
     namaPenandatangan: '',
+    logoPerusahaanId: null as string | null,
     totalAktivaLancar: 0, totalAktivaTetap: 0, totalAktiva: 0,
     totalUtangJangkaPendek: 0, labaRugi: 0, totalModal: 0, totalPasiva: 0,
     totalBiaya: 0,
@@ -384,6 +388,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
       biayaListrik?: number; biayaTelpon?: number; biayaTransport?: number;
       biayaSewa?: number; biayaLainLain?: number;
       tempatTandaTangan?: string; tanggalTandaTangan?: string; namaPenandatangan?: string;
+      logoPerusahaanId?: string | null;
     };
   }>('/api/laporan/neraca', async (req, reply) => {
     const b = req.body;
@@ -402,6 +407,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
       tempatTandaTangan: b.tempatTandaTangan?.trim() || 'Sukabumi',
       tanggalTandaTangan: b.tanggalTandaTangan ? new Date(b.tanggalTandaTangan) : new Date(),
       namaPenandatangan: b.namaPenandatangan?.trim() || '',
+      logoPerusahaanId: b.logoPerusahaanId ?? null,
     };
     const record = await prisma.laporanNeraca.upsert({
       where: { year: b.year },

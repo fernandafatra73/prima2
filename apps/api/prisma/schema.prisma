@@ -250,6 +250,7 @@ model LaporanNeraca {
   tempatTandaTangan  String   @default("Sukabumi")
   tanggalTandaTangan DateTime @default(now())
   namaPenandatangan  String   @default("")
+  logoPerusahaanId   String?
 
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

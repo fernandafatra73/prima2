@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { SharingPdfPreviewModal } from '../components/ui/SharingPdfPreviewModal.tsx';
 import { apiGet, apiPut } from '../lib/api.ts';
+import type { PaginatedResponse } from '../lib/pagination.ts';
 import { formatRupiah } from '../lib/format.ts';
 import {
   LaporanNeracaReportDocument,
   type LaporanNeracaReportData,
 } from '../pdf/LaporanNeracaReportDocument.tsx';
+import { Neraca1ReportDocument } from '../pdf/Neraca1ReportDocument.tsx';
+import { Neraca2ReportDocument } from '../pdf/Neraca2ReportDocument.tsx';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
 import { pdf } from '@react-pdf/renderer';
 import '../components/ui/ui.css';
@@ -38,6 +41,13 @@ interface NeracaData {
   readonly tempatTandaTangan: string;
   readonly tanggalTandaTangan: string;
   readonly namaPenandatangan: string;
+  readonly logoPerusahaanId: string | null;
+}
+
+interface LogoPerusahaanOption {
+  readonly id: string;
+  readonly namaKlinik: string;
+  readonly logoPerusahaan: string | null;
 }
 
 const emptyForm = {
@@ -51,6 +61,7 @@ const emptyForm = {
   tempatTandaTangan: 'Sukabumi',
   tanggalTandaTangan: new Date().toISOString().split('T')[0]!,
   namaPenandatangan: '',
+  logoPerusahaanId: '' as string,
 };
 
 function n(v: string): number {
@@ -70,6 +81,15 @@ export function LaporanNeracaPage() {
   const [previewingPdf, setPreviewingPdf] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [printingNeraca1, setPrintingNeraca1] = useState(false);
+  const [printingNeraca2, setPrintingNeraca2] = useState(false);
+  const [logoOptions, setLogoOptions] = useState<readonly LogoPerusahaanOption[]>([]);
+
+  useEffect(() => {
+    apiGet<PaginatedResponse<LogoPerusahaanOption>>('/api/logo-perusahaan?limit=200')
+      .then((res) => setLogoOptions(res.items))
+      .catch(() => setLogoOptions([]));
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -89,6 +109,7 @@ export function LaporanNeracaPage() {
         tempatTandaTangan: d.tempatTandaTangan,
         tanggalTandaTangan: d.tanggalTandaTangan,
         namaPenandatangan: d.namaPenandatangan,
+        logoPerusahaanId: d.logoPerusahaanId ?? '',
       });
       setIsEditing(false);
     } catch (err) {
@@ -141,6 +162,7 @@ export function LaporanNeracaPage() {
         tempatTandaTangan: form.tempatTandaTangan,
         tanggalTandaTangan: form.tanggalTandaTangan,
         namaPenandatangan: form.namaPenandatangan,
+        logoPerusahaanId: form.logoPerusahaanId || null,
       });
       await fetchData();
     } catch (err) {
@@ -223,6 +245,41 @@ export function LaporanNeracaPage() {
     }
   }
 
+  function loadLogoPerusahaanStamp(): string {
+    const selected = form.logoPerusahaanId
+      ? logoOptions.find((o) => o.id === form.logoPerusahaanId)
+      : logoOptions[0];
+    return selected?.logoPerusahaan ?? '';
+  }
+
+  async function handleCetakNeraca1() {
+    setPrintingNeraca1(true);
+    try {
+      const logoSrc = loadLogoPerusahaanStamp();
+      const reportData = { ...buildReportData(), logoSrc };
+      const blob = await pdf(<Neraca1ReportDocument data={reportData} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } finally {
+      setPrintingNeraca1(false);
+    }
+  }
+
+  async function handleCetakNeraca2() {
+    setPrintingNeraca2(true);
+    try {
+      const logoSrc = loadLogoPerusahaanStamp();
+      const reportData = { ...buildReportData(), logoSrc };
+      const blob = await pdf(<Neraca2ReportDocument data={reportData} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } finally {
+      setPrintingNeraca2(false);
+    }
+  }
+
   function field(key: keyof typeof form, label: string) {
     if (!isEditing) {
       return (
@@ -290,6 +347,22 @@ export function LaporanNeracaPage() {
               style={{ border: '1px solid var(--color-border)' }}
             >
               👁️ {previewingPdf ? 'Memuat...' : 'Preview PDF'}
+            </button>
+            <button
+              type="button"
+              className="btn btn--sm btn--secondary"
+              onClick={() => void handleCetakNeraca1()}
+              disabled={printingNeraca1}
+            >
+              🖨️ {printingNeraca1 ? 'Membuat PDF...' : 'Cetak Neraca1'}
+            </button>
+            <button
+              type="button"
+              className="btn btn--sm btn--secondary"
+              onClick={() => void handleCetakNeraca2()}
+              disabled={printingNeraca2}
+            >
+              🖨️ {printingNeraca2 ? 'Membuat PDF...' : 'Cetak Neraca2'}
             </button>
           </div>
         }
@@ -455,6 +528,21 @@ export function LaporanNeracaPage() {
                       onChange={(e) => setForm((f) => ({ ...f, namaPenandatangan: e.target.value }))}
                     />
                   </div>
+                  <div className="form-field form-field--full">
+                    <label htmlFor="neraca-logo-perusahaan">Pilihan Logo (Stempel Cetak Neraca1 &amp; Neraca2)</label>
+                    <select
+                      id="neraca-logo-perusahaan"
+                      value={form.logoPerusahaanId}
+                      onChange={(e) => setForm((f) => ({ ...f, logoPerusahaanId: e.target.value }))}
+                    >
+                      <option value="">-- Pilih Logo Perusahaan --</option>
+                      {logoOptions.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.namaKlinik}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               ) : (
                 <p style={{ fontSize: '0.9rem' }}>
@@ -464,6 +552,11 @@ export function LaporanNeracaPage() {
                   })}
                   <br />
                   <strong>{form.namaPenandatangan || '( ................................. )'}</strong>
+                  <br />
+                  <span style={{ color: 'var(--color-text-muted)' }}>
+                    Logo untuk Cetak Neraca1 &amp; Neraca2:{' '}
+                    {logoOptions.find((o) => o.id === form.logoPerusahaanId)?.namaKlinik ?? '(default)'}
+                  </span>
                 </p>
               )}
             </div>
