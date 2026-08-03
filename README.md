@@ -1,3 +1,6 @@
+# Changes History
+LabPrima adalah projek laboratorium CV Prima Husada
+
 # LabPrima
 
 Monorepo: **React + Vite** (frontend) and **Node + Fastify + Prisma + PostgreSQL** (API).

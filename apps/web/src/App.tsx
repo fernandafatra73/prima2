@@ -52,6 +52,7 @@ import { AbsensiPage } from './pages/AbsensiPage.tsx';
 import { KeuanganPembukuanPage } from './pages/KeuanganPembukuanPage.tsx';
 import { PetugasKasirPage } from './pages/PetugasKasirPage.tsx';
 import { PetugasAdminKlinikPage } from './pages/PetugasAdminKlinikPage.tsx';
+import { AdminPendaftaranPage } from './pages/AdminPendaftaranPage.tsx';
 import { AnatomiPage } from './pages/AnatomiPage.tsx';
 import { useState } from 'react';
 
@@ -184,6 +185,8 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN') {
       return <PetugasKasirPage />;
     case 'petugas-admin-klinik':
       return <PetugasAdminKlinikPage />;
+    case 'admin-pendaftaran':
+      return <AdminPendaftaranPage />;
     case 'anatomi-thorak':
       return <AnatomiPage regio="thorak" />;
     case 'anatomi-kepala':

@@ -85,6 +85,17 @@ export function petugasAdminKlinikListWhere(q?: string): Prisma.PetugasAdminKlin
   };
 }
 
+export function adminPendaftaranListWhere(q?: string): Prisma.AdminPendaftaranWhereInput {
+  const term = searchTerm(q);
+  if (!term) return {};
+  return {
+    OR: [
+      { nama: { contains: term } },
+      { noHp: { contains: term } },
+    ],
+  };
+}
+
 export function tandaTanganElektronikListWhere(q?: string): Prisma.TandaTanganElektronikWhereInput {
   const term = searchTerm(q);
   if (!term) return {};

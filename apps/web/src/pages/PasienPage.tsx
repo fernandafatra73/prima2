@@ -174,6 +174,7 @@ export function PasienPage() {
   const [quickEditError, setQuickEditError] = useState<string | null>(null);
   const [nama, setNama] = useState('');
   const [tanggalLahir, setTanggalLahir] = useState('');
+  const [umurManual, setUmurManual] = useState('');
   const [noTelepon, setNoTelepon] = useState('');
   const [alamat, setAlamat] = useState('');
   const [pengirimId, setPengirimId] = useState('');
@@ -351,6 +352,7 @@ export function PasienPage() {
   function resetForm() {
     setNama('');
     setTanggalLahir('');
+    setUmurManual('');
     setNoTelepon('');
     setAlamat('');
     setPengirimId('');
@@ -366,6 +368,15 @@ export function PasienPage() {
     setSharingMode('auto');
     setEditingId(null);
     setSelectedPendaftaranId('');
+  }
+
+  function handleUmurManualChange(value: string) {
+    setUmurManual(value);
+    const years = parseInt(value, 10);
+    if (Number.isFinite(years) && years >= 0) {
+      const y = new Date().getFullYear() - years;
+      setTanggalLahir(`${y}-01-01`);
+    }
   }
 
   function toggleJenis(id: string) {
@@ -1254,15 +1265,24 @@ export function PasienPage() {
                 min={birthDateInputMin()}
                 max={birthDateInputMax()}
                 value={tanggalLahir}
-                onChange={(e) => setTanggalLahir(e.target.value)}
+                onChange={(e) => {
+                  setTanggalLahir(e.target.value);
+                  const years = isValidBirthDate(e.target.value) ? computeUmurYears(e.target.value) : null;
+                  setUmurManual(years === null ? '' : String(years));
+                }}
                 onBlur={(e) => setTanggalLahir(normalizeBirthDateOnBlur(e.target.value))}
               />
             </div>
             <div className="form-field" style={{ gridColumn: '4', gridRow: '3' }}>
-              <span className="form-field__static-label">Umur</span>
-              <p className="form-field__static-value">
-                {umurPreview === null ? '—' : formatUmurTahun(umurPreview)}
-              </p>
+              <label htmlFor="umur-manual">Umur (tahun)</label>
+              <input
+                id="umur-manual"
+                type="number"
+                min="0"
+                step="1"
+                value={umurManual}
+                onChange={(e) => handleUmurManualChange(e.target.value)}
+              />
             </div>
             <div className="form-field" style={{ gridColumn: '1', gridRow: '2' }}>
               <label htmlFor="nama">Nama *</label>

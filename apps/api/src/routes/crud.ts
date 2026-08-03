@@ -6,6 +6,7 @@ import { hashPassword } from '../lib/password.js';
 import { nextPendaftaranUmumCode, nextRegCode } from '../lib/regCode.js';
 import { buildPaginationMeta, parsePagination } from '../lib/pagination.js';
 import {
+  adminPendaftaranListWhere,
   dokterListWhere,
   hargaListWhere,
   jenisListWhere,
@@ -435,6 +436,55 @@ export async function registerCrudRoutes(app: FastifyInstance) {
 
   app.delete<{ Params: { id: string } }>('/api/petugas-admin-klinik/:id', async (req) => {
     await prisma.petugasAdminKlinik.delete({ where: { id: req.params.id } });
+    return { ok: true };
+  });
+
+  app.get<{ Querystring: ListQuery }>('/api/admin-pendaftaran', async (req) => {
+    const { page, limit, skip } = parsePagination(req.query);
+    const where = adminPendaftaranListWhere(req.query.q);
+    const [total, items] = await Promise.all([
+      prisma.adminPendaftaran.count({ where }),
+      prisma.adminPendaftaran.findMany({
+        where,
+        orderBy: { nama: 'asc' },
+        skip,
+        take: limit,
+      }),
+    ]);
+    return { items, pagination: buildPaginationMeta(total, page, limit) };
+  });
+
+  app.post<{ Body: { nama: string; noHp?: string } }>('/api/admin-pendaftaran', async (req, reply) => {
+    if (!req.body.nama?.trim()) return badRequest(reply, 'nama wajib diisi');
+    const item = await prisma.adminPendaftaran.create({
+      data: {
+        nama: req.body.nama.trim(),
+        noHp: req.body.noHp?.trim() || null,
+      },
+    });
+    return reply.status(201).send({ item });
+  });
+
+  app.patch<{
+    Params: { id: string };
+    Body: { nama?: string; noHp?: string; statusHadir?: string | null; statusTanggal?: string | null };
+  }>('/api/admin-pendaftaran/:id', async (req, reply) => {
+    const existing = await prisma.adminPendaftaran.findUnique({ where: { id: req.params.id } });
+    if (!existing) return reply.status(404).send({ error: 'Admin pendaftaran tidak ditemukan' });
+    const item = await prisma.adminPendaftaran.update({
+      where: { id: req.params.id },
+      data: {
+        nama: req.body.nama?.trim() ?? existing.nama,
+        noHp: req.body.noHp !== undefined ? req.body.noHp?.trim() || null : existing.noHp,
+        statusHadir: req.body.statusHadir !== undefined ? req.body.statusHadir : existing.statusHadir,
+        statusTanggal: req.body.statusTanggal !== undefined ? req.body.statusTanggal : existing.statusTanggal,
+      },
+    });
+    return { item };
+  });
+
+  app.delete<{ Params: { id: string } }>('/api/admin-pendaftaran/:id', async (req) => {
+    await prisma.adminPendaftaran.delete({ where: { id: req.params.id } });
     return { ok: true };
   });
 

@@ -300,14 +300,13 @@ export function PendaftaranUmumPage() {
               <th>Tanggal Masuk</th>
               <th>Dokter Pengirim</th>
               <th>Klinis</th>
-              <th>Admin</th>
               <th>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ textAlign: 'center', padding: '2rem' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>
                   Belum ada data pendaftaran umum.
                 </td>
               </tr>
@@ -380,7 +379,6 @@ export function PendaftaranUmumPage() {
                   <td>{new Date(item.tanggalMasuk).toLocaleDateString('id-ID')}</td>
                   <td>{item.dokterPengirim || '-'}</td>
                   <td>{item.klinis || '-'}</td>
-                  <td>{item.admin || '-'}</td>
                   <td>
                     <TableRowActions
                       onEdit={() => openEdit(item)}

@@ -27,6 +27,7 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
     iconName: 'clipboard',
     items: [
       { id: 'pendaftaran-umum', label: 'Pendaftaran Umum', shortLabel: 'Pendaftaran Umum' },
+      { id: 'admin-pendaftaran', label: 'Admin Pendaftaran', shortLabel: 'Admin Pendaftaran' },
     ],
   },
   {
@@ -142,6 +143,7 @@ export const MAIN_NAV_ITEMS: readonly NavItem[] = [
   { id: 'fatra', label: 'Fatra', shortLabel: 'Fatra' },
   { id: 'pasien', label: 'Data & Registrasi Pasien', shortLabel: 'Registrasi Pasien' },
   { id: 'pendaftaran-umum', label: 'Pendaftaran Umum', shortLabel: 'Pendaftaran Umum' },
+  { id: 'admin-pendaftaran', label: 'Admin Pendaftaran', shortLabel: 'Admin Pendaftaran' },
   { id: 'transfer', label: 'Transfer', shortLabel: 'Transfer' },
   { id: 'absensi', label: 'Daftar Hadir Karyawan', shortLabel: 'Presensi Staff' },
   { id: 'farmasi-bhp', label: 'Manajemen Farmasi & BHP', shortLabel: 'Stok Obat & BHP' },

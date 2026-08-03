@@ -172,6 +172,8 @@ export function LaboratoriumPage() {
   const [saving, setSaving] = useState(false);
   const [printingId, setPrintingId] = useState<string | null>(null);
   const [logoSrc, setLogoSrc] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Registrasi Lab state
   const [regModalOpen, setRegModalOpen] = useState(false);
@@ -181,6 +183,7 @@ export function LaboratoriumPage() {
   
     const [regNama, setRegNama] = useState('');
   const [regTanggalLahir, setRegTanggalLahir] = useState('');
+  const [regUmurManual, setRegUmurManual] = useState('');
   const [regNoTelepon, setRegNoTelepon] = useState('');
   const [regAlamat, setRegAlamat] = useState('');
   const [regKlinis, setRegKlinis] = useState('');
@@ -272,6 +275,21 @@ export function LaboratoriumPage() {
     setHasilStatus(item.hasilStatus);
     setPaymentStatus(item.paymentStatus);
     setEditPaketIds(item.pemeriksaan.map((x) => x.jenisPemeriksaanId));
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    setError(null);
+    try {
+      await apiDelete(`/api/pasien/${deleteTarget.id}`);
+      setDeleteTarget(null);
+      await reload();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus');
+    } finally {
+      setDeleteLoading(false);
+    }
   }
 
   function handleRowChange(index: number, field: keyof LabTableRow, value: string) {
@@ -399,6 +417,15 @@ export function LaboratoriumPage() {
       else setRegAdmin(p.admin);
     } else {
       setRegAdmin('');
+    }
+  }
+
+  function handleRegUmurManualChange(value: string) {
+    setRegUmurManual(value);
+    const years = parseInt(value, 10);
+    if (Number.isFinite(years) && years >= 0) {
+      const y = new Date().getFullYear() - years;
+      setRegTanggalLahir(`${y}-01-01`);
     }
   }
 
@@ -639,6 +666,7 @@ export function LaboratoriumPage() {
             onClick={() => {
                             setRegNama('');
               setRegTanggalLahir('');
+              setRegUmurManual('');
               setRegNoTelepon('');
               setRegAlamat('');
               setRegKlinis('');
@@ -661,7 +689,6 @@ export function LaboratoriumPage() {
         <thead>
           <tr>
             <th>No</th>
-            <th>Reg Code & Tanggal</th>
             <th>Nama Pasien</th>
             <th>Umur / JK</th>
             <th>Dokter Pengirim</th>
@@ -673,7 +700,7 @@ export function LaboratoriumPage() {
         <tbody>
           {items.length === 0 ? (
             <tr>
-              <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>
+              <td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>
                 Belum ada data pendaftaran pasien laboratorium.
               </td>
             </tr>
@@ -681,12 +708,6 @@ export function LaboratoriumPage() {
             items.map((item, idx) => (
               <tr key={item.id}>
                 <td>{(pagination.page - 1) * pagination.limit + idx + 1}</td>
-                <td>
-                  <strong>{item.regCode}</strong>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                    {formatDateDisplay(item.createdAt)}
-                  </div>
-                </td>
                 <td>
                   <strong>{item.nama}</strong>
                   <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
@@ -698,9 +719,8 @@ export function LaboratoriumPage() {
                 </td>
                 <td>{item.pengirim.nama}</td>
                 <td>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.6rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-                      {/* Nama Pemeriksaan Laboratorium */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    {/* Nama Pemeriksaan Laboratorium */}
                       {item.pemeriksaan.length > 0 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginBottom: '0.15rem' }}>
                           {item.pemeriksaan.map((p) => (
@@ -755,16 +775,6 @@ export function LaboratoriumPage() {
                           </span>
                         );
                       })()}
-                    </div>
-                    <button
-                      type="button"
-                      className="btn btn--secondary btn--sm"
-                      onClick={() => openEdit(item)}
-                      style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', flexShrink: 0 }}
-                      title="Edit Hasil Pemeriksaan Lab"
-                    >
-                      ✏️ Edit
-                    </button>
                   </div>
                 </td>
                 <td>
@@ -782,6 +792,23 @@ export function LaboratoriumPage() {
                       onClick={() => openEdit(item)}
                     >
                       ⚡ Hasil Lab
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--secondary btn--sm"
+                      onClick={() => openEdit(item)}
+                      title="Edit Hasil Pemeriksaan Lab"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => setDeleteTarget({ id: item.id, label: item.nama })}
+                      style={{ border: '1px solid var(--color-border)', color: '#ef4444' }}
+                      title="Hapus Registrasi Pasien"
+                    >
+                      🗑️ Hapus
                     </button>
                     <button
                       type="button"
@@ -1321,14 +1348,29 @@ export function LaboratoriumPage() {
 
             <div className="form-field">
               <label htmlFor="rTgl">Tanggal Lahir *</label>
-              <input id="rTgl" type="date" required value={regTanggalLahir} onChange={(e) => setRegTanggalLahir(e.target.value)} />
+              <input
+                id="rTgl"
+                type="date"
+                required
+                value={regTanggalLahir}
+                onChange={(e) => {
+                  setRegTanggalLahir(e.target.value);
+                  const years = computeUmurYears(e.target.value);
+                  setRegUmurManual(years === null ? '' : String(years));
+                }}
+              />
             </div>
 
             <div className="form-field">
-              <span className="form-field__static-label">Umur</span>
-              <p className="form-field__static-value">
-                {regTanggalLahir ? formatUmurTahun(computeUmurYears(regTanggalLahir) ?? 0) : '—'}
-              </p>
+              <label htmlFor="rUmurManual">Umur (tahun)</label>
+              <input
+                id="rUmurManual"
+                type="number"
+                min="0"
+                step="1"
+                value={regUmurManual}
+                onChange={(e) => handleRegUmurManualChange(e.target.value)}
+              />
             </div>
 
             <div className="form-field">
@@ -1429,6 +1471,15 @@ export function LaboratoriumPage() {
         loading={deletePaketLoading}
         onClose={() => setDeletePaketTarget(null)}
         onConfirm={() => void handleDeletePaket()}
+      />
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Hapus Registrasi Pasien"
+        message={`Yakin hapus registrasi "${deleteTarget?.label ?? ''}"? Tindakan ini tidak bisa dibatalkan.`}
+        loading={deleteLoading}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => void confirmDelete()}
       />
     </ListPageShell>
   );

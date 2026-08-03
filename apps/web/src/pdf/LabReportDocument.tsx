@@ -363,10 +363,10 @@ export function LabReportDocument({ data }: { readonly data: LabReportData }) {
               <View style={styles.headerRow}>
                 {data.logoSrc ? <Image style={styles.logo} src={data.logoSrc} /> : null}
                 <View style={styles.headerText}>
-                  <Text style={styles.clinicSmall}>KLINIK ROENTGEN DAN USG</Text>
+                  <Text style={styles.clinicSmall}>LABORATORIUM KLINIK</Text>
                   <Text style={styles.clinicName}>PRIMA HUSADA</Text>
                   <Text style={styles.clinicAddress}>
-                    Jl Siliwangi No 28 A Parung Kuda Telp. 0857-1932-5557
+                    Jl Siliwangi No 2 Ruko Palapa Telp 0857-1932-5557
                   </Text>
                 </View>
               </View>

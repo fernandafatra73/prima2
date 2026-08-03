@@ -1,4 +1,5 @@
 # AGENTS.md
+- Always Auto Push and Commit
 
 ## Ground rules (always)
 - Be conservative, explicit, and boring.
