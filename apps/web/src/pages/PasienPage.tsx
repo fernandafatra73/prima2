@@ -672,9 +672,14 @@ export function PasienPage() {
 
   const jenisPemeriksaanField = (
     <div className="form-field form-grid--span-3" style={{ marginTop: '0.5rem' }}>
-      <label style={{ fontWeight: 600, color: '#0369a1', marginBottom: '0.5rem', display: 'block' }}>
-        Tabel Jenis Pemeriksaan, Harga & Sharing
-      </label>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+        <label style={{ fontWeight: 600, color: '#0369a1' }}>
+          Tabel Jenis Pemeriksaan, Harga & Sharing
+        </label>
+        <span style={{ fontWeight: 600, color: '#0f172a' }}>
+          Total Bayar: <span style={{ color: '#0284c7' }}>{formatRupiah(estimate.totalHarga)}</span>
+        </span>
+      </div>
       <div
         style={{
           border: '1px solid #e0e7ff',
@@ -1343,7 +1348,7 @@ export function PasienPage() {
                 <option value="custom">✎ Input Manual / Lainnya...</option>
               </select>
             </div>
-            <div className="form-field" style={{ gridColumn: '1', gridRow: '3' }}>
+            <div className="form-field" style={{ gridColumn: '4', gridRow: '2' }}>
               <label htmlFor="sharing">Nominal Sharing (Rp)</label>
               <input
                 id="sharing"
@@ -1356,10 +1361,6 @@ export function PasienPage() {
                   setSharingMode('custom');
                 }}
               />
-            </div>
-            <div className="form-field" style={{ gridColumn: '2', gridRow: '3' }}>
-              <span className="form-field__static-label">Total Bayar</span>
-              <p className="form-field__static-value">{formatRupiah(estimate.totalHarga)}</p>
             </div>
           </div>
 
