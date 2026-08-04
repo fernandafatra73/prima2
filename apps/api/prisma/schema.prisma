@@ -129,6 +129,17 @@ model DaftarTelpon {
   updatedAt     DateTime @updatedAt
 }
 
+/// Tanggal merah selain hari Minggu & 5 hari libur nasional tanggal tetap
+/// (yang sudah dihitung langsung di kode) — mis. Idul Fitri, Idul Adha, cuti
+/// bersama, dsb. Diinput manual oleh admin sesuai kalender resmi tahun berjalan.
+model HariLibur {
+  id          String   @id @default(cuid())
+  tanggal     DateTime @unique
+  keterangan  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model HitunganLed {
   id           String   @id @default(cuid())
   namaPasien   String
@@ -370,6 +381,7 @@ model AnalisaFotoRontgen {
   jenisPemeriksaan String?
   tanggal          DateTime @default(now())
   fotoDataUrl      String
+  ukuranFoto       String   @default("3 x 4 cm")
   kesan            String?
   diagnosa         String?
   radiologNama     String?

@@ -22,6 +22,7 @@ import { FatraPage } from './pages/FatraPage.tsx';
 import { PendaftaranUmumPage } from './pages/PendaftaranUmumPage.tsx';
 import { TransferPage } from './pages/TransferPage.tsx';
 import { DaftarTelponPage } from './pages/DaftarTelponPage.tsx';
+import { KalenderPage } from './pages/KalenderPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { PasienPage } from './pages/PasienPage.tsx';
 import { PetugasLabPage } from './pages/PetugasLabPage.tsx';
@@ -104,6 +105,8 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
       return <TransferPage />;
     case 'daftar-telpon':
       return <DaftarTelponPage />;
+    case 'kalender':
+      return <KalenderPage />;
     case 'harga-pemeriksaan-lab':
       return <HargaPemeriksaanLabPage />;
     case 'lab':

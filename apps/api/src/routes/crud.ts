@@ -2525,6 +2525,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
           jenisPemeriksaan: true,
           tanggal: true,
           fotoDataUrl: true,
+          ukuranFoto: true,
           kesan: true,
           diagnosa: true,
           radiologNama: true,
@@ -2539,6 +2540,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         jenisPemeriksaan: a.jenisPemeriksaan,
         tanggal: a.tanggal.toISOString(),
         fotoDataUrl: a.fotoDataUrl,
+        ukuranFoto: a.ukuranFoto,
         kesan: a.kesan,
         diagnosa: a.diagnosa,
         radiologNama: a.radiologNama,
@@ -2554,6 +2556,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       jenisPemeriksaan?: string;
       tanggal?: string;
       fotoDataUrl: string;
+      ukuranFoto?: string;
       kesan?: string;
       diagnosa?: string;
       radiologNama?: string;
@@ -2570,6 +2573,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         jenisPemeriksaan: b.jenisPemeriksaan?.trim() || null,
         tanggal: b.tanggal ? new Date(b.tanggal) : new Date(),
         fotoDataUrl: b.fotoDataUrl,
+        ukuranFoto: b.ukuranFoto?.trim() || '3 x 4 cm',
         kesan: b.kesan?.trim() || null,
         diagnosa: b.diagnosa?.trim() || null,
         radiologNama: b.radiologNama?.trim() || null,
@@ -2583,6 +2587,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         jenisPemeriksaan: item.jenisPemeriksaan,
         tanggal: item.tanggal.toISOString(),
         fotoDataUrl: item.fotoDataUrl,
+        ukuranFoto: item.ukuranFoto,
         kesan: item.kesan,
         diagnosa: item.diagnosa,
         radiologNama: item.radiologNama,
@@ -2863,6 +2868,75 @@ export async function registerCrudRoutes(app: FastifyInstance) {
 
   app.delete<{ Params: { id: string } }>('/api/daftar-telpon/:id', async (req) => {
     await prisma.daftarTelpon.delete({ where: { id: req.params.id } });
+    return { ok: true };
+  });
+
+  // ─── Hari Libur (Kalender) ──────────────────────────────────────────────────
+
+  app.get<{ Querystring: { year?: string } }>('/api/hari-libur', async (req) => {
+    const yearStr = req.query.year || new Date().getFullYear().toString();
+    const year = parseInt(yearStr, 10);
+    if (isNaN(year)) return { items: [] };
+    const items = await prisma.hariLibur.findMany({
+      where: { tanggal: { gte: new Date(year, 0, 1), lte: new Date(year, 11, 31, 23, 59, 59, 999) } },
+      orderBy: { tanggal: 'asc' },
+    });
+    return {
+      items: items.map((h) => ({
+        id: h.id,
+        tanggal: h.tanggal.toISOString().slice(0, 10),
+        keterangan: h.keterangan,
+      })),
+    };
+  });
+
+  app.post<{ Body: { tanggal: string; keterangan: string } }>(
+    '/api/hari-libur',
+    async (req, reply) => {
+      if (!req.body.tanggal || !req.body.keterangan?.trim()) {
+        return badRequest(reply, 'tanggal dan keterangan wajib diisi');
+      }
+      try {
+        const item = await prisma.hariLibur.create({
+          data: { tanggal: new Date(req.body.tanggal), keterangan: req.body.keterangan.trim() },
+        });
+        return reply.status(201).send({
+          item: { id: item.id, tanggal: item.tanggal.toISOString().slice(0, 10), keterangan: item.keterangan },
+        });
+      } catch (err: unknown) {
+        if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+          return badRequest(reply, 'Sudah ada hari libur untuk tanggal tersebut');
+        }
+        throw err;
+      }
+    },
+  );
+
+  app.patch<{ Params: { id: string }; Body: { tanggal?: string; keterangan?: string } }>(
+    '/api/hari-libur/:id',
+    async (req, reply) => {
+      const existing = await prisma.hariLibur.findUnique({ where: { id: req.params.id } });
+      if (!existing) return reply.status(404).send({ error: 'Hari libur tidak ditemukan' });
+      try {
+        const item = await prisma.hariLibur.update({
+          where: { id: req.params.id },
+          data: {
+            tanggal: req.body.tanggal ? new Date(req.body.tanggal) : existing.tanggal,
+            keterangan: req.body.keterangan?.trim() ?? existing.keterangan,
+          },
+        });
+        return { item: { id: item.id, tanggal: item.tanggal.toISOString().slice(0, 10), keterangan: item.keterangan } };
+      } catch (err: unknown) {
+        if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+          return badRequest(reply, 'Sudah ada hari libur untuk tanggal tersebut');
+        }
+        throw err;
+      }
+    },
+  );
+
+  app.delete<{ Params: { id: string } }>('/api/hari-libur/:id', async (req) => {
+    await prisma.hariLibur.delete({ where: { id: req.params.id } });
     return { ok: true };
   });
 

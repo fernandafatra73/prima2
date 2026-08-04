@@ -24,6 +24,7 @@ interface AnalisaFotoRontgenItem {
   readonly jenisPemeriksaan: string | null;
   readonly tanggal: string;
   readonly fotoDataUrl: string;
+  readonly ukuranFoto: string;
   readonly kesan: string | null;
   readonly diagnosa: string | null;
   readonly radiologNama: string | null;
@@ -35,6 +36,13 @@ interface DuplikatRadiologiOption {
   readonly nama: string;
   readonly pemeriksaanNama: string;
 }
+
+interface RadiologOption {
+  readonly id: string;
+  readonly nama: string;
+}
+
+const UKURAN_FOTO_OPTIONS = ['3 x 4 cm', '4 x 6 cm', '2 x 3 cm', 'Original'];
 
 interface KopSuratData {
   readonly namaKlinik: string;
@@ -68,6 +76,7 @@ const emptyForm = {
   jenisPemeriksaan: '',
   tanggal: new Date().toISOString().split('T')[0]!,
   fotoDataUrl: '',
+  ukuranFoto: UKURAN_FOTO_OPTIONS[0]!,
   kesan: '',
   diagnosa: '',
   radiologNama: '',
@@ -95,6 +104,7 @@ export function AnalisaFotoRontgenPage() {
   const [printingId, setPrintingId] = useState<string | null>(null);
 
   const [duplikatOptions, setDuplikatOptions] = useState<DuplikatRadiologiOption[]>([]);
+  const [radiologOptions, setRadiologOptions] = useState<RadiologOption[]>([]);
 
   const loadDuplikatOptions = useCallback(async () => {
     try {
@@ -107,9 +117,19 @@ export function AnalisaFotoRontgenPage() {
     }
   }, []);
 
+  const loadRadiologOptions = useCallback(async () => {
+    try {
+      const res = await apiGet<{ items: RadiologOption[] }>('/api/radiolog?limit=200');
+      setRadiologOptions(res.items);
+    } catch {
+      setRadiologOptions([]);
+    }
+  }, []);
+
   useEffect(() => {
     void loadDuplikatOptions();
-  }, [loadDuplikatOptions]);
+    void loadRadiologOptions();
+  }, [loadDuplikatOptions, loadRadiologOptions]);
 
   const [kesanSearchOpen, setKesanSearchOpen] = useState(false);
   const [kesanSearchQuery, setKesanSearchQuery] = useState('');
@@ -167,6 +187,7 @@ export function AnalisaFotoRontgenPage() {
       jenisPemeriksaan: item.jenisPemeriksaan ?? '',
       tanggal: item.tanggal.split('T')[0]!,
       fotoDataUrl: item.fotoDataUrl,
+      ukuranFoto: item.ukuranFoto || UKURAN_FOTO_OPTIONS[0]!,
       kesan: item.kesan ?? '',
       diagnosa: item.diagnosa ?? '',
       radiologNama: item.radiologNama ?? '',
@@ -207,6 +228,7 @@ export function AnalisaFotoRontgenPage() {
         jenisPemeriksaan: form.jenisPemeriksaan || undefined,
         tanggal: form.tanggal,
         fotoDataUrl: form.fotoDataUrl,
+        ukuranFoto: form.ukuranFoto || undefined,
         kesan: form.kesan || undefined,
         diagnosa: form.diagnosa || undefined,
         radiologNama: form.radiologNama || undefined,
@@ -435,6 +457,20 @@ export function AnalisaFotoRontgenPage() {
                 />
               )}
             </div>
+            <div className="form-field">
+              <label htmlFor="afr-ukuran-foto">Ukuran Foto</label>
+              <select
+                id="afr-ukuran-foto"
+                value={form.ukuranFoto}
+                onChange={(e) => setForm((f) => ({ ...f, ukuranFoto: e.target.value }))}
+              >
+                {UKURAN_FOTO_OPTIONS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="form-field form-field--full">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <label htmlFor="afr-kesan" style={{ margin: 0 }}>Kesan (diisi manual oleh radiolog)</label>
@@ -465,11 +501,21 @@ export function AnalisaFotoRontgenPage() {
             </div>
             <div className="form-field">
               <label htmlFor="afr-radiolog">Nama Radiolog/Dokter</label>
-              <input
+              <select
                 id="afr-radiolog"
                 value={form.radiologNama}
                 onChange={(e) => setForm((f) => ({ ...f, radiologNama: e.target.value }))}
-              />
+              >
+                <option value="">-- Pilih Radiolog --</option>
+                {form.radiologNama && !radiologOptions.some((r) => r.nama === form.radiologNama) && (
+                  <option value={form.radiologNama}>{form.radiologNama}</option>
+                )}
+                {radiologOptions.map((r) => (
+                  <option key={r.id} value={r.nama}>
+                    {r.nama}
+                  </option>
+                ))}
+              </select>
             </div>
             <ModalFormFooter
               onCancel={closeModal}
