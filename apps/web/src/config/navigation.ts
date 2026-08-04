@@ -212,6 +212,7 @@ export const MAIN_NAV_ITEMS: readonly NavItem[] = [
   { id: 'daftar-telpon', label: 'Daftar Telpon', shortLabel: 'Daftar Telpon' },
   { id: 'kalender', label: 'Kalender', shortLabel: 'Kalender' },
   { id: 'whatsapp', label: 'WhatsApp', shortLabel: 'WhatsApp' },
+  { id: 'telegram', label: 'Telegram', shortLabel: 'Telegram' },
   { id: 'tanda-tangan-elektronik', label: 'Tanda Tangan Elektronik', shortLabel: 'Tanda Tangan Elektronik' },
   { id: 'anatomi-thorak', label: 'Thorak', shortLabel: 'Thorak' },
   { id: 'anatomi-kepala', label: 'Kepala', shortLabel: 'Kepala' },

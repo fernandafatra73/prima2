@@ -222,6 +222,17 @@ export function Sidebar({ activeId, onNavigate, role }: SidebarProps) {
               <span className="app-sidebar__label">WhatsApp</span>
             </button>
           </li>
+
+          <li>
+            <button
+              type="button"
+              className={`app-sidebar__link${activeId === 'telegram' ? ' app-sidebar__link--active' : ''}`}
+              onClick={() => onNavigate('telegram')}
+            >
+              <IconClipboard className="app-sidebar__icon" />
+              <span className="app-sidebar__label">Telegram</span>
+            </button>
+          </li>
         </ul>
       </nav>
 
