@@ -1070,6 +1070,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         items: items.map((j) => ({
           id: j.id,
           nama: j.nama,
+          jumlahFilm: j.jumlahFilm,
           harga: j.harga ? serializeDecimal(j.harga.harga) : null,
           detailLayanan: j.harga?.detailLayanan ?? null,
         })),
@@ -1078,15 +1079,16 @@ export async function registerCrudRoutes(app: FastifyInstance) {
     },
   );
 
-  app.post<{ Body: { nama: string; harga?: number; detailLayanan?: string } }>(
+  app.post<{ Body: { nama: string; jumlahFilm?: number; harga?: number; detailLayanan?: string } }>(
     '/api/jenis-pemeriksaan',
     async (req, reply) => {
       if (!req.body.nama?.trim()) return badRequest(reply, 'nama wajib diisi');
-      const { harga, detailLayanan } = req.body;
+      const { harga, detailLayanan, jumlahFilm } = req.body;
       try {
         const item = await prisma.jenisPemeriksaan.create({
           data: {
             nama: req.body.nama.trim(),
+            ...(jumlahFilm !== undefined ? { jumlahFilm } : {}),
             ...(harga !== undefined
               ? {
                   harga: {
@@ -1104,6 +1106,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
           item: {
             id: item.id,
             nama: item.nama,
+            jumlahFilm: item.jumlahFilm,
             harga: item.harga ? serializeDecimal(item.harga.harga) : null,
             detailLayanan: item.harga?.detailLayanan ?? null,
           },
@@ -1129,7 +1132,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
     },
   );
 
-  app.patch<{ Params: { id: string }; Body: { nama?: string; harga?: number; detailLayanan?: string } }>(
+  app.patch<{ Params: { id: string }; Body: { nama?: string; jumlahFilm?: number; harga?: number; detailLayanan?: string } }>(
     '/api/jenis-pemeriksaan/:id',
     async (req, reply) => {
       const existing = await prisma.jenisPemeriksaan.findUnique({
@@ -1143,7 +1146,10 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         const item = await prisma.$transaction(async (tx) => {
           const jenis = await tx.jenisPemeriksaan.update({
             where: { id: req.params.id },
-            data: { nama: req.body.nama!.trim() },
+            data: {
+              nama: req.body.nama!.trim(),
+              ...(req.body.jumlahFilm !== undefined ? { jumlahFilm: req.body.jumlahFilm } : {}),
+            },
           });
           if (req.body.harga !== undefined) {
             await tx.hargaLayanan.upsert({
@@ -1178,6 +1184,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
           item: {
             id: item.id,
             nama: item.nama,
+            jumlahFilm: item.jumlahFilm,
             harga: item.harga ? serializeDecimal(item.harga.harga) : null,
             detailLayanan: item.harga?.detailLayanan ?? null,
           },

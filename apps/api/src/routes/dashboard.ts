@@ -411,13 +411,14 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
     totalBiaya: 0,
   };
 
-  app.get<{ Querystring: { year?: string } }>('/api/laporan/neraca', async (req) => {
+  app.get<{ Querystring: { year?: string; modul?: string } }>('/api/laporan/neraca', async (req) => {
     const yearStr = req.query.year || new Date().getFullYear().toString();
     const year = parseInt(yearStr, 10);
     if (isNaN(year)) {
       return { error: 'Tahun tidak valid' };
     }
-    const record = await prisma.laporanNeraca.findUnique({ where: { year } });
+    const modul = req.query.modul === 'LABORATORIUM' ? 'LABORATORIUM' : 'RADIOLOGI';
+    const record = await prisma.laporanNeraca.findUnique({ where: { year_modul: { year, modul } } });
     if (!record) {
       return { item: { ...NERACA_DEFAULTS, year } };
     }
@@ -427,6 +428,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
   app.put<{
     Body: {
       year: number;
+      modul?: string;
       namaPerusahaan?: string;
       kas?: number; bank?: number; piutang?: number; persediaan?: number;
       tanah?: number; gedung?: number; peralatan?: number; kendaraan?: number;
@@ -443,6 +445,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
     if (!Number.isInteger(b.year)) {
       return badRequest(reply, 'year wajib diisi');
     }
+    const modul = b.modul === 'LABORATORIUM' ? 'LABORATORIUM' : 'RADIOLOGI';
     const data = {
       namaPerusahaan: b.namaPerusahaan?.trim() || 'CV. PRIMA MANDIRI NUSANTARA',
       kas: b.kas ?? 0, bank: b.bank ?? 0, piutang: b.piutang ?? 0, persediaan: b.persediaan ?? 0,
@@ -458,8 +461,8 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
       logoPerusahaanId: b.logoPerusahaanId ?? null,
     };
     const record = await prisma.laporanNeraca.upsert({
-      where: { year: b.year },
-      create: { year: b.year, ...data },
+      where: { year_modul: { year: b.year, modul } },
+      create: { year: b.year, modul, ...data },
       update: data,
     });
     return reply.status(200).send({ item: serializeNeraca(record) });

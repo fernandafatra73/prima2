@@ -252,9 +252,10 @@ model LaporanPajakBulanan {
 }
 
 model LaporanNeraca {
-  id                 String   @id @default(cuid())
-  year               Int      @unique
-  namaPerusahaan     String   @default("CV. PRIMA MANDIRI NUSANTARA")
+  id                 String    @id @default(cuid())
+  year               Int
+  modul              AsalModul @default(RADIOLOGI)
+  namaPerusahaan     String    @default("CV. PRIMA MANDIRI NUSANTARA")
 
   // Aktiva Lancar
   kas                Decimal  @default(0)
@@ -297,6 +298,8 @@ model LaporanNeraca {
 
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  @@unique([year, modul])
 }
 
 /// Pengaturan kop surat (logo, nama klinik, alamat, telepon) dipakai bersama
@@ -377,6 +380,7 @@ model AnalisaFotoRontgen {
 model JenisPemeriksaan {
   id        String              @id @default(cuid())
   nama      String              @unique
+  jumlahFilm Int                @default(1)
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
   harga     HargaLayanan?

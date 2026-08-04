@@ -43,10 +43,20 @@ async function resolveLogoSrc(kopSuratLogo: string | null): Promise<string> {
   return loadLogoDataUrl().catch(() => '');
 }
 
+const KOP_SURAT_DEFAULTS: KopSuratData = {
+  namaKlinik: 'KLINIK PRIMA HUSADA',
+  alamat: 'Jl. Siliwangi Ruko Palapa No 2 Parung Kuda',
+  telepon: '0857-1932-5557',
+  logoDataUrl: null,
+};
+
 function KopSuratSection() {
+  const [item, setItem] = useState<KopSuratData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [form, setForm] = useState({ namaKlinik: '', alamat: '', telepon: '', logoDataUrl: null as string | null });
 
   const fetchKopSurat = useCallback(async () => {
@@ -54,12 +64,7 @@ function KopSuratSection() {
     setError(null);
     try {
       const res = await apiGet<{ item: KopSuratData }>('/api/kop-surat');
-      setForm({
-        namaKlinik: res.item.namaKlinik,
-        alamat: res.item.alamat,
-        telepon: res.item.telepon,
-        logoDataUrl: res.item.logoDataUrl,
-      });
+      setItem(res.item);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat kop surat');
     } finally {
@@ -70,6 +75,18 @@ function KopSuratSection() {
   useEffect(() => {
     void fetchKopSurat();
   }, [fetchKopSurat]);
+
+  function openEdit() {
+    if (!item) return;
+    setForm({
+      namaKlinik: item.namaKlinik,
+      alamat: item.alamat,
+      telepon: item.telepon,
+      logoDataUrl: item.logoDataUrl,
+    });
+    setError(null);
+    setEditing(true);
+  }
 
   function handleLogoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -89,11 +106,25 @@ function KopSuratSection() {
     setError(null);
     try {
       await apiPut('/api/kop-surat', form);
+      setEditing(false);
       await fetchKopSurat();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menyimpan kop surat');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleReset() {
+    setResetting(true);
+    setError(null);
+    try {
+      await apiPut('/api/kop-surat', KOP_SURAT_DEFAULTS);
+      await fetchKopSurat();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus kop surat');
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -110,61 +141,99 @@ function KopSuratSection() {
         {loading ? (
           <p className="loading-text">Memuat…</p>
         ) : (
-          <form onSubmit={(e) => void handleSave(e)} className="form-grid" style={{ maxWidth: '640px' }}>
-            <div className="form-field form-field--full">
-              <label htmlFor="kop-nama-klinik">Nama Klinik</label>
-              <input
-                id="kop-nama-klinik"
-                required
-                value={form.namaKlinik}
-                onChange={(e) => setForm((f) => ({ ...f, namaKlinik: e.target.value }))}
-              />
-            </div>
-            <div className="form-field form-field--full">
-              <label htmlFor="kop-alamat">Alamat</label>
-              <input
-                id="kop-alamat"
-                value={form.alamat}
-                onChange={(e) => setForm((f) => ({ ...f, alamat: e.target.value }))}
-              />
-            </div>
-            <div className="form-field">
-              <label htmlFor="kop-telepon">Telepon</label>
-              <input
-                id="kop-telepon"
-                value={form.telepon}
-                onChange={(e) => setForm((f) => ({ ...f, telepon: e.target.value }))}
-              />
-            </div>
-            <div className="form-field form-field--full">
-              <label htmlFor="kop-logo">Logo</label>
-              <input id="kop-logo" type="file" accept="image/*" onChange={handleLogoFileChange} />
-              {form.logoDataUrl && (
-                <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <img
-                    src={form.logoDataUrl}
-                    alt="Preview logo"
-                    style={{ width: 64, height: 64, objectFit: 'contain', border: '1px solid var(--color-border)', borderRadius: '6px' }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn--sm btn--ghost"
-                    onClick={() => setForm((f) => ({ ...f, logoDataUrl: null }))}
-                    style={{ border: '1px solid var(--color-border)' }}
-                  >
-                    Hapus Logo (Pakai Default)
-                  </button>
-                </div>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Logo</th>
+                <th>Nama Klinik</th>
+                <th>Alamat</th>
+                <th>Telepon</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {item && (
+                <tr>
+                  <td>
+                    {item.logoDataUrl ? (
+                      <img
+                        src={item.logoDataUrl}
+                        alt="Logo kop surat"
+                        style={{ width: 48, height: 48, objectFit: 'contain', border: '1px solid var(--color-border)', borderRadius: '6px' }}
+                      />
+                    ) : (
+                      '— (default)'
+                    )}
+                  </td>
+                  <td>{item.namaKlinik}</td>
+                  <td>{item.alamat || '—'}</td>
+                  <td>{item.telepon || '—'}</td>
+                  <td>
+                    <TableRowActions
+                      onEdit={openEdit}
+                      onDelete={() => void handleReset()}
+                      editLabel="Ubah kop surat"
+                      deleteLabel={resetting ? 'Menghapus…' : 'Hapus (kembalikan ke default)'}
+                    />
+                  </td>
+                </tr>
               )}
-            </div>
-            <div style={{ marginTop: '0.5rem' }}>
-              <button type="submit" className="btn btn--primary" disabled={saving}>
-                {saving ? 'Menyimpan...' : 'Simpan Kop Surat'}
-              </button>
-            </div>
-          </form>
+            </tbody>
+          </table>
         )}
       </section>
+
+      <Modal open={editing} title="Ubah Kop Surat" onClose={() => setEditing(false)}>
+        <form onSubmit={(e) => void handleSave(e)} className="form-grid">
+          <div className="form-field form-field--full">
+            <label htmlFor="kop-nama-klinik">Nama Klinik</label>
+            <input
+              id="kop-nama-klinik"
+              required
+              value={form.namaKlinik}
+              onChange={(e) => setForm((f) => ({ ...f, namaKlinik: e.target.value }))}
+            />
+          </div>
+          <div className="form-field form-field--full">
+            <label htmlFor="kop-alamat">Alamat</label>
+            <input
+              id="kop-alamat"
+              value={form.alamat}
+              onChange={(e) => setForm((f) => ({ ...f, alamat: e.target.value }))}
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="kop-telepon">Telepon</label>
+            <input
+              id="kop-telepon"
+              value={form.telepon}
+              onChange={(e) => setForm((f) => ({ ...f, telepon: e.target.value }))}
+            />
+          </div>
+          <div className="form-field form-field--full">
+            <label htmlFor="kop-logo">Logo</label>
+            <input id="kop-logo" type="file" accept="image/*" onChange={handleLogoFileChange} />
+            {form.logoDataUrl && (
+              <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <img
+                  src={form.logoDataUrl}
+                  alt="Preview logo"
+                  style={{ width: 64, height: 64, objectFit: 'contain', border: '1px solid var(--color-border)', borderRadius: '6px' }}
+                />
+                <button
+                  type="button"
+                  className="btn btn--sm btn--ghost"
+                  onClick={() => setForm((f) => ({ ...f, logoDataUrl: null }))}
+                  style={{ border: '1px solid var(--color-border)' }}
+                >
+                  Hapus Logo (Pakai Default)
+                </button>
+              </div>
+            )}
+          </div>
+          <ModalFormFooter onCancel={() => setEditing(false)} submitLabel="Simpan Kop Surat" loading={saving} />
+        </form>
+      </Modal>
     </div>
   );
 }

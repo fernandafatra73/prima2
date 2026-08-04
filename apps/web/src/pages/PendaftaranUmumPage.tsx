@@ -319,16 +319,16 @@ export function PendaftaranUmumPage() {
       <div style={{ overflowX: 'auto' }}>
         <table className="data-table">
           <thead>
-            <tr>
-              <th>No Registrasi</th>
-              <th>Nama Pasien</th>
-              <th>Umur</th>
-              <th>Alamat</th>
-              <th>Telpon</th>
-              <th>Tanggal Masuk</th>
-              <th>Dokter Pengirim</th>
-              <th>Klinis</th>
-              <th>Aksi</th>
+            <tr style={{ background: '#e0f2fe' }}>
+              <th style={{ color: '#0369a1' }}>No Registrasi</th>
+              <th style={{ color: '#0369a1' }}>Nama Pasien</th>
+              <th style={{ color: '#0369a1' }}>Umur</th>
+              <th style={{ color: '#0369a1' }}>Alamat</th>
+              <th style={{ color: '#0369a1' }}>Telpon</th>
+              <th style={{ color: '#0369a1' }}>Tanggal Masuk</th>
+              <th style={{ color: '#0369a1' }}>Dokter Pengirim</th>
+              <th style={{ color: '#0369a1' }}>Klinis</th>
+              <th style={{ color: '#0369a1' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -528,7 +528,7 @@ export function PendaftaranUmumPage() {
                   />
                 </div>
 
-                <div style={{ gridColumn: '1 / -1' }}>
+                <div style={{ gridColumn: 'span 2' }}>
                   <label htmlFor="namaPasien" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
                     Nama Lengkap Pasien <span style={{ color: '#ef4444' }}>*</span>
                   </label>

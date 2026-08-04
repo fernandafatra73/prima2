@@ -68,7 +68,12 @@ function n(v: string): number {
   return Number(v) || 0;
 }
 
-export function LaporanNeracaPage() {
+interface LaporanNeracaPageProps {
+  readonly modul?: 'RADIOLOGI' | 'LABORATORIUM';
+}
+
+export function LaporanNeracaPage({ modul = 'RADIOLOGI' }: LaporanNeracaPageProps) {
+  const moduleLabel = modul === 'RADIOLOGI' ? 'Radiologi' : 'Laboratorium';
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState<number>(currentYear);
   const [form, setForm] = useState(emptyForm);
@@ -95,7 +100,7 @@ export function LaporanNeracaPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiGet<{ item: NeracaData }>(`/api/laporan/neraca?year=${year}`);
+      const res = await apiGet<{ item: NeracaData }>(`/api/laporan/neraca?year=${year}&modul=${modul}`);
       const d = res.item;
       setForm({
         namaPerusahaan: d.namaPerusahaan,
@@ -117,7 +122,7 @@ export function LaporanNeracaPage() {
     } finally {
       setLoading(false);
     }
-  }, [year]);
+  }, [year, modul]);
 
   useEffect(() => {
     void fetchData();
@@ -151,6 +156,7 @@ export function LaporanNeracaPage() {
     try {
       await apiPut('/api/laporan/neraca', {
         year,
+        modul,
         namaPerusahaan: form.namaPerusahaan,
         kas: n(form.kas), bank: n(form.bank), piutang: n(form.piutang), persediaan: n(form.persediaan),
         tanah: n(form.tanah), gedung: n(form.gedung), peralatan: n(form.peralatan), kendaraan: n(form.kendaraan),
@@ -224,7 +230,7 @@ export function LaporanNeracaPage() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `Laporan_Neraca_${year}.pdf`;
+      anchor.download = `Laporan_Neraca_${moduleLabel}_${year}.pdf`;
       anchor.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -306,8 +312,8 @@ export function LaporanNeracaPage() {
   return (
     <>
       <ListPageShell
-        title="Laporan Neraca"
-        subtitle={`Neraca & Laporan Rugi Laba tahunan — input manual per akun, Total Aktiva/Pasiva dan Laba(Rugi) dihitung otomatis`}
+        title={`Laporan Neraca ${moduleLabel}`}
+        subtitle={`Neraca & Laporan Rugi Laba tahunan ${moduleLabel} — input manual per akun, Total Aktiva/Pasiva dan Laba(Rugi) dihitung otomatis`}
         onRefresh={() => void fetchData()}
         error={error}
         loading={loading}

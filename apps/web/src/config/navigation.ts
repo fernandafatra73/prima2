@@ -83,6 +83,7 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
     items: [
       { id: 'laporan-pajak', label: 'Pajak Radiologi - Laporan Tahunan', shortLabel: 'Pajak Radiologi (Tahunan)' },
       { id: 'laporan-pajak-bulanan', label: 'Pajak Radiologi - Laporan Bulanan', shortLabel: 'Pajak Radiologi (Bulanan)' },
+      { id: 'neracarad', label: 'Neracarad', shortLabel: 'Neracarad' },
       { id: 'laporan-pajak-lab', label: 'Pajak Laboratorium - Laporan Tahunan', shortLabel: 'Pajak Lab (Tahunan)' },
       { id: 'laporan-pajak-bulanan-lab', label: 'Pajak Laboratorium - Laporan Bulanan', shortLabel: 'Pajak Lab (Bulanan)' },
       { id: 'laporan-neraca', label: 'Laporan Neraca', shortLabel: 'Laporan Neraca' },
@@ -187,6 +188,7 @@ export const MAIN_NAV_ITEMS: readonly NavItem[] = [
   { id: 'laporan-pajak-lab', label: 'Laporan Pajak Tahun Lab', shortLabel: 'Laporan Pajak Tahun Lab' },
   { id: 'laporan-pajak-bulanan-lab', label: 'Laporan Pajak Bulanan Lab', shortLabel: 'Laporan Pajak Bulanan Lab' },
   { id: 'laporan-neraca', label: 'Laporan Neraca', shortLabel: 'Laporan Neraca' },
+  { id: 'neracarad', label: 'Neracarad', shortLabel: 'Neracarad' },
   { id: 'radiolog', label: 'Pekerjaan Radiolog', shortLabel: 'Pekerjaan Radiolog' },
   { id: 'radiolog-duplikat', label: 'Duplikat Radiologi', shortLabel: 'Duplikat Radiologi' },
   { id: 'kwitansi-radiologi', label: 'Kwitansi Radiologi', shortLabel: 'Kwitansi' },
@@ -269,6 +271,7 @@ export const MANAGEMENT_ONLY_NAV_IDS: ReadonlySet<AppViewId> = new Set([
   'laporan-pajak-lab',
   'laporan-pajak-bulanan-lab',
   'laporan-neraca',
+  'neracarad',
   'role',
   'admin',
 ]);

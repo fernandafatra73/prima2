@@ -136,6 +136,8 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
       return <LaporanPajakBulananPage modul="LABORATORIUM" />;
     case 'laporan-neraca':
       return <LaporanNeracaPage />;
+    case 'neracarad':
+      return <LaporanNeracaPage modul="RADIOLOGI" />;
     case 'radiolog':
       return <RadiologWorkPage />;
     case 'radiolog-duplikat':

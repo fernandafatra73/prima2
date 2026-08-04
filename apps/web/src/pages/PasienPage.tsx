@@ -38,6 +38,7 @@ interface Jenis {
   readonly id: string;
   readonly nama: string;
   readonly harga: string | null;
+  readonly jumlahFilm: number;
 }
 
 interface PendaftaranUmumItem {
@@ -195,6 +196,7 @@ export function PasienPage() {
   const [editingJenisItem, setEditingJenisItem] = useState<Jenis | null>(null);
   const [editingJenisNama, setEditingJenisNama] = useState('');
   const [editingJenisHarga, setEditingJenisHarga] = useState('');
+  const [editingJenisJumlahFilm, setEditingJenisJumlahFilm] = useState('1');
   const [savingJenis, setSavingJenis] = useState(false);
   const [jenisError, setJenisError] = useState<string | null>(null);
 
@@ -625,6 +627,7 @@ export function PasienPage() {
     setEditingJenisItem(null);
     setEditingJenisNama('');
     setEditingJenisHarga('');
+    setEditingJenisJumlahFilm('1');
     setJenisError(null);
     setJenisModalMode('add');
   }
@@ -633,6 +636,7 @@ export function PasienPage() {
     setEditingJenisItem(j);
     setEditingJenisNama(j.nama);
     setEditingJenisHarga(j.harga ?? '');
+    setEditingJenisJumlahFilm(String(j.jumlahFilm));
     setJenisError(null);
     setJenisModalMode('edit');
   }
@@ -654,11 +658,13 @@ export function PasienPage() {
         await apiPost('/api/jenis-pemeriksaan', {
           nama: editingJenisNama.trim(),
           harga: Number(editingJenisHarga),
+          jumlahFilm: Number(editingJenisJumlahFilm) || 1,
         });
       } else if (editingJenisItem) {
         await apiPatch(`/api/jenis-pemeriksaan/${editingJenisItem.id}`, {
           nama: editingJenisNama.trim(),
           harga: Number(editingJenisHarga),
+          jumlahFilm: Number(editingJenisJumlahFilm) || 1,
         });
       }
       setJenisModalMode(null);
@@ -694,6 +700,7 @@ export function PasienPage() {
             <tr>
               <th style={{ width: '70px', textAlign: 'center', padding: '10px' }}>Pilih</th>
               <th style={{ textAlign: 'left', padding: '10px' }}>Jenis Pemeriksaan</th>
+              <th style={{ width: '80px', textAlign: 'center', padding: '10px' }}>Film</th>
               <th style={{ width: '150px', textAlign: 'right', padding: '10px' }}>Harga</th>
               <th style={{ width: '150px', textAlign: 'right', padding: '10px' }}>Sharing</th>
               <th style={{ width: '160px', textAlign: 'center', padding: '10px' }}>Aksi</th>
@@ -702,7 +709,7 @@ export function PasienPage() {
           <tbody>
             {jenis.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '1.5rem', color: '#64748b' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '1.5rem', color: '#64748b' }}>
                   Belum ada data jenis pemeriksaan.
                 </td>
               </tr>
@@ -733,6 +740,9 @@ export function PasienPage() {
                     </td>
                     <td style={{ padding: '10px', fontWeight: isChecked ? 600 : 400, color: '#1e293b' }}>
                       {j.nama}
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '10px', fontWeight: isChecked ? 600 : 400, color: '#0f172a' }}>
+                      {j.jumlahFilm}
                     </td>
                     <td style={{ textAlign: 'right', padding: '10px', fontWeight: isChecked ? 600 : 400, color: '#0f172a' }}>
                       {formatRupiah(itemHarga)}
@@ -799,6 +809,11 @@ export function PasienPage() {
               <tr>
                 <td colSpan={2} style={{ padding: '10px', textAlign: 'right', color: '#334155' }}>
                   Total Terpilih ({selectedJenis.length} pemeriksaan):
+                </td>
+                <td style={{ padding: '10px', textAlign: 'center', color: '#0f172a' }}>
+                  {jenis
+                    .filter((j) => selectedJenis.includes(j.id))
+                    .reduce((sum, j) => sum + j.jumlahFilm, 0)}
                 </td>
                 <td style={{ padding: '10px', textAlign: 'right', color: '#0f172a' }}>
                   {formatRupiah(estimate.totalHarga)}
@@ -1480,6 +1495,18 @@ export function PasienPage() {
               step="1"
               value={editingJenisHarga}
               onChange={(e) => setEditingJenisHarga(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="edit-jenis-jumlah-film">Jumlah Film</label>
+            <input
+              id="edit-jenis-jumlah-film"
+              type="number"
+              min="1"
+              step="1"
+              value={editingJenisJumlahFilm}
+              onChange={(e) => setEditingJenisJumlahFilm(e.target.value)}
               required
             />
           </div>

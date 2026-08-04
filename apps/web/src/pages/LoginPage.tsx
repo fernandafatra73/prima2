@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import logoLabprima from '@src/image/logo-labprima.png';
 import { apiPost } from '../lib/api.ts';
 import type { AuthUser } from '../lib/auth.ts';
@@ -17,6 +17,14 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  function onEmailKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      passwordRef.current?.focus();
+    }
+  }
 
   async function onSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
@@ -55,6 +63,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              onKeyDown={onEmailKeyDown}
             />
           </div>
 
@@ -62,6 +71,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             <label htmlFor="login-password">Password</label>
             <input
               id="login-password"
+              ref={passwordRef}
               type="password"
               autoComplete="current-password"
               required
