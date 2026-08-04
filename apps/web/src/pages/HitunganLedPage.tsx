@@ -40,6 +40,7 @@ function formatDateDisplay(dateStr: string): string {
 }
 
 const TIMER_PRESETS = [
+  { label: '5 Menit', seconds: 5 * 60 },
   { label: '15 Menit', seconds: 15 * 60 },
   { label: '30 Menit', seconds: 30 * 60 },
   { label: '1 Jam', seconds: 60 * 60 },
