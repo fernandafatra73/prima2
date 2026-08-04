@@ -22,6 +22,9 @@ function timestampForFilename(): string {
 
 type RecordingState = 'idle' | 'recording' | 'paused';
 
+/** Rekaman dipotong otomatis tiap 5 menit supaya file tidak menumpuk jadi satu video raksasa. */
+const SEGMENT_DURATION_MS = 5 * 60 * 1000;
+
 export function FatraPage() {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
@@ -33,6 +36,12 @@ export function FatraPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const segmentTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingStateRef = useRef<RecordingState>('idle');
+
+  useEffect(() => {
+    recordingStateRef.current = recordingState;
+  }, [recordingState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,6 +79,7 @@ export function FatraPage() {
 
     return () => {
       cancelled = true;
+      stopSegmentTimer();
       recorderRef.current?.stop();
     };
   }, []);
@@ -110,6 +120,23 @@ export function FatraPage() {
     return recorder;
   }
 
+  /** Tutup segmen berjalan (unduh) lalu langsung lanjut merekam segmen baru, tanpa mengubah status Merekam. */
+  function rotateSegment() {
+    if (recordingStateRef.current !== 'recording') return;
+    recorderRef.current?.stop();
+    const recorder = createRecorder();
+    if (!recorder) return;
+    recorderRef.current = recorder;
+    recorder.start();
+  }
+
+  function stopSegmentTimer() {
+    if (segmentTimerRef.current !== null) {
+      clearInterval(segmentTimerRef.current);
+      segmentTimerRef.current = null;
+    }
+  }
+
   function handleStart() {
     if (recordingState !== 'idle') return;
     const recorder = createRecorder();
@@ -117,6 +144,8 @@ export function FatraPage() {
     recorderRef.current = recorder;
     recorder.start();
     setRecordingState('recording');
+    stopSegmentTimer();
+    segmentTimerRef.current = setInterval(rotateSegment, SEGMENT_DURATION_MS);
   }
 
   function handlePauseResume() {
@@ -131,6 +160,7 @@ export function FatraPage() {
 
   function handleStop() {
     if (recordingState === 'idle') return;
+    stopSegmentTimer();
     recorderRef.current?.stop();
     recorderRef.current = null;
     setRecordingState('idle');
@@ -165,7 +195,8 @@ export function FatraPage() {
     <div>
       <h2 style={{ margin: '0 0 0.25rem' }}>📹 Fatra — CCTV Monitor</h2>
       <p style={{ margin: '0 0 1rem', color: '#64748b' }}>
-        Live view kamera dari komputer ini. Rekaman tersimpan (terunduh) saat Anda menekan Stop.
+        Live view kamera dari komputer ini. Rekaman otomatis terpotong &amp; tersimpan (terunduh)
+        tiap 5 menit selama merekam, dan segmen terakhir tersimpan saat Anda menekan Stop.
       </p>
 
       {cameraError && (
