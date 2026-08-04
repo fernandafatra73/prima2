@@ -3,11 +3,10 @@ import { Decimal, PrismaClientKnownRequestError } from '../generated/prisma/inte
 import { prisma } from '../lib/prisma.js';
 import { calcTotalSharing, sumHarga } from '../lib/pasienFinance.js';
 import { hashPassword } from '../lib/password.js';
-import { nextAplikasiTambahanCode, nextPendaftaranUmumCode, nextRegCode } from '../lib/regCode.js';
+import { nextPendaftaranUmumCode, nextRegCode } from '../lib/regCode.js';
 import { buildPaginationMeta, parsePagination } from '../lib/pagination.js';
 import {
   adminPendaftaranListWhere,
-  aplikasiTambahanListWhere,
   dokterListWhere,
   hargaListWhere,
   jenisListWhere,
@@ -2857,105 +2856,6 @@ export async function registerCrudRoutes(app: FastifyInstance) {
 
   app.delete<{ Params: { id: string } }>('/api/daftar-telpon/:id', async (req) => {
     await prisma.daftarTelpon.delete({ where: { id: req.params.id } });
-    return { ok: true };
-  });
-
-  // ─── Aplikasi Tambahan ──────────────────────────────────────────────────────
-
-  app.get<{ Querystring: ListQuery }>('/api/aplikasi-tambahan', async (req) => {
-    const { page, limit, skip } = parsePagination(req.query);
-    const where = aplikasiTambahanListWhere(req.query.q);
-    const [total, items] = await Promise.all([
-      prisma.aplikasiTambahan.count({ where }),
-      prisma.aplikasiTambahan.findMany({
-        where,
-        orderBy: { tanggal: 'desc' },
-        skip,
-        take: limit,
-      }),
-    ]);
-    return {
-      items: items.map((item) => ({ ...item, harga: serializeDecimal(item.harga) })),
-      pagination: buildPaginationMeta(total, page, limit),
-    };
-  });
-
-  interface AplikasiTambahanBody {
-    nama: string;
-    umur?: string;
-    umurSatuan?: string;
-    noTelp?: string;
-    alamat?: string;
-    pengirim?: string;
-    pemeriksaan?: string;
-    klinis?: string;
-    sharing?: string;
-    harga?: number | string;
-    kesan1?: string;
-    kesan2?: string;
-    kesan3?: string;
-    kesan4?: string;
-    staffTag?: string;
-  }
-
-  app.post<{ Body: AplikasiTambahanBody }>('/api/aplikasi-tambahan', async (req, reply) => {
-    if (!req.body.nama?.trim()) return badRequest(reply, 'nama wajib diisi');
-    const kodePasien = nextAplikasiTambahanCode();
-    const item = await prisma.aplikasiTambahan.create({
-      data: {
-        kodePasien,
-        nama: req.body.nama.trim(),
-        umur: req.body.umur?.trim() || null,
-        umurSatuan: req.body.umurSatuan?.trim() || 'Thn',
-        noTelp: req.body.noTelp?.trim() || null,
-        alamat: req.body.alamat?.trim() || null,
-        pengirim: req.body.pengirim?.trim() || null,
-        pemeriksaan: req.body.pemeriksaan?.trim() || null,
-        klinis: req.body.klinis?.trim() || null,
-        sharing: req.body.sharing?.trim() || null,
-        harga: new Decimal(req.body.harga || 0),
-        kesan1: req.body.kesan1?.trim() || null,
-        kesan2: req.body.kesan2?.trim() || null,
-        kesan3: req.body.kesan3?.trim() || null,
-        kesan4: req.body.kesan4?.trim() || null,
-        staffTag: req.body.staffTag?.trim() || null,
-      },
-    });
-    return reply.status(201).send({ item: { ...item, harga: serializeDecimal(item.harga) } });
-  });
-
-  app.patch<{ Params: { id: string }; Body: Partial<AplikasiTambahanBody> }>(
-    '/api/aplikasi-tambahan/:id',
-    async (req, reply) => {
-      const existing = await prisma.aplikasiTambahan.findUnique({ where: { id: req.params.id } });
-      if (!existing) return reply.status(404).send({ error: 'Data tidak ditemukan' });
-      const b = req.body;
-      const item = await prisma.aplikasiTambahan.update({
-        where: { id: req.params.id },
-        data: {
-          nama: b.nama?.trim() ?? existing.nama,
-          umur: b.umur !== undefined ? b.umur?.trim() || null : existing.umur,
-          umurSatuan: b.umurSatuan !== undefined ? b.umurSatuan?.trim() || null : existing.umurSatuan,
-          noTelp: b.noTelp !== undefined ? b.noTelp?.trim() || null : existing.noTelp,
-          alamat: b.alamat !== undefined ? b.alamat?.trim() || null : existing.alamat,
-          pengirim: b.pengirim !== undefined ? b.pengirim?.trim() || null : existing.pengirim,
-          pemeriksaan: b.pemeriksaan !== undefined ? b.pemeriksaan?.trim() || null : existing.pemeriksaan,
-          klinis: b.klinis !== undefined ? b.klinis?.trim() || null : existing.klinis,
-          sharing: b.sharing !== undefined ? b.sharing?.trim() || null : existing.sharing,
-          harga: b.harga !== undefined ? new Decimal(b.harga || 0) : existing.harga,
-          kesan1: b.kesan1 !== undefined ? b.kesan1?.trim() || null : existing.kesan1,
-          kesan2: b.kesan2 !== undefined ? b.kesan2?.trim() || null : existing.kesan2,
-          kesan3: b.kesan3 !== undefined ? b.kesan3?.trim() || null : existing.kesan3,
-          kesan4: b.kesan4 !== undefined ? b.kesan4?.trim() || null : existing.kesan4,
-          staffTag: b.staffTag !== undefined ? b.staffTag?.trim() || null : existing.staffTag,
-        },
-      });
-      return { item: { ...item, harga: serializeDecimal(item.harga) } };
-    },
-  );
-
-  app.delete<{ Params: { id: string } }>('/api/aplikasi-tambahan/:id', async (req) => {
-    await prisma.aplikasiTambahan.delete({ where: { id: req.params.id } });
     return { ok: true };
   });
 

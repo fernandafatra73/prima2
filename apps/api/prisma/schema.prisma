@@ -640,27 +640,3 @@ model KeuanganTransaksi {
   updatedAt  DateTime @updatedAt
 }
 
-model AplikasiTambahan {
-  id          String   @id @default(cuid())
-  kodePasien  String   @unique
-  nama        String
-  umur        String?
-  umurSatuan  String?  @default("Thn")
-  noTelp      String?
-  alamat      String?
-  pengirim    String?
-  pemeriksaan String?
-  klinis      String?
-  sharing     String?
-  harga       Decimal  @default(0)
-  kesan1      String?
-  kesan2      String?
-  kesan3      String?
-  kesan4      String?
-  staffTag    String?
-  tanggal     DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-

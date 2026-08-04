@@ -144,7 +144,6 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
 
 export const MAIN_NAV_ITEMS: readonly NavItem[] = [
   { id: 'templet', label: 'Templet', shortLabel: 'Templet' },
-  { id: 'aplikasi-tambahan', label: 'Aplikasi Tambahan', shortLabel: 'Aplikasi Tambahan' },
   { id: 'musik-ph', label: 'Musik-PH', shortLabel: 'Musik-PH' },
   { id: 'fatra', label: 'Fatra', shortLabel: 'Fatra' },
   { id: 'pasien', label: 'Data & Registrasi Pasien', shortLabel: 'Registrasi Pasien' },

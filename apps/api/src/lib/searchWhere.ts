@@ -104,19 +104,6 @@ export function logoPerusahaanListWhere(q?: string): Prisma.LogoPerusahaanWhereI
   };
 }
 
-export function aplikasiTambahanListWhere(q?: string): Prisma.AplikasiTambahanWhereInput {
-  const term = searchTerm(q);
-  if (!term) return {};
-  return {
-    OR: [
-      { nama: { contains: term } },
-      { kodePasien: { contains: term } },
-      { pemeriksaan: { contains: term } },
-      { pengirim: { contains: term } },
-    ],
-  };
-}
-
 export function tandaTanganElektronikListWhere(q?: string): Prisma.TandaTanganElektronikWhereInput {
   const term = searchTerm(q);
   if (!term) return {};

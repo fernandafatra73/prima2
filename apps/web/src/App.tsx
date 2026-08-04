@@ -46,7 +46,6 @@ import { LaporanTahunanPage } from './pages/LaporanTahunanPage.tsx';
 import { LaporanPajakPage } from './pages/LaporanPajakPage.tsx';
 import { LaporanPajakBulananPage } from './pages/LaporanPajakBulananPage.tsx';
 import { LaporanNeracaPage } from './pages/LaporanNeracaPage.tsx';
-import { AplikasiTambahanPage } from './pages/AplikasiTambahanPage.tsx';
 import { TempletPage } from './pages/TempletPage.tsx';
 import { AnalisaFotoRontgenPage } from './pages/AnalisaFotoRontgenPage.tsx';
 import { AdminPage } from './pages/AdminPage.tsx';
@@ -137,8 +136,6 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN') {
       return <LaporanPajakBulananPage modul="LABORATORIUM" />;
     case 'laporan-neraca':
       return <LaporanNeracaPage />;
-    case 'aplikasi-tambahan':
-      return <AplikasiTambahanPage />;
     case 'radiolog':
       return <RadiologWorkPage />;
     case 'radiolog-duplikat':
