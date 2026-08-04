@@ -490,18 +490,23 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
     const startOfYear = new Date(year, 0, 1);
     const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
 
-    const [pasienRecords, rows] = await Promise.all([
+    const [pasienRecords, rows, overrides] = await Promise.all([
       prisma.pasienDuplikat.findMany({
         where: { asalModul: modul, registeredAt: { gte: startOfYear, lte: endOfYear } },
         select: { registeredAt: true },
       }),
       prisma.laporanPajakBulanan.findMany({ where: { year, modul } }),
+      prisma.laporanPajakOverride.findMany({ where: { year, modul } }),
     ]);
 
     const jumlahPasienPerBulan = Array.from({ length: 12 }, () => 0);
     for (const r of pasienRecords) {
       jumlahPasienPerBulan[r.registeredAt.getMonth()] += 1;
     }
+
+    // Jumlah pasien otomatis mengikuti koreksi manual yang sama dengan Laporan
+    // Pajak Tahunan (LaporanPajakOverride), supaya kedua laporan konsisten.
+    const overrideJumlahPasienByBulan = new Map(overrides.map((o) => [o.bulan, o.jumlahPasien]));
 
     const rowByBulan = new Map(rows.map((r) => [r.bulan, r]));
 
@@ -512,7 +517,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
     const bulanData = [];
     for (let bulanKe = 1; bulanKe <= 12; bulanKe++) {
       const row = rowByBulan.get(bulanKe);
-      const jumlahPasien = jumlahPasienPerBulan[bulanKe - 1]!;
+      const jumlahPasien = overrideJumlahPasienByBulan.get(bulanKe) ?? jumlahPasienPerBulan[bulanKe - 1]!;
 
       const harga = toNumber(row?.harga ?? new Decimal(0));
       const biayaSewaTempat = toNumber(row?.biayaSewaTempat ?? new Decimal(0));
