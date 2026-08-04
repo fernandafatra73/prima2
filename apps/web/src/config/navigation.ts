@@ -133,6 +133,7 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
     iconName: 'pill',
     items: [
       { id: 'farmasi-bhp', label: 'Manajemen Farmasi & BHP', shortLabel: 'Stok Obat & BHP' },
+      { id: 'kwitansi-farmasi', label: 'Kwitansi Farmasi', shortLabel: 'Kwitansi Farmasi' },
     ],
   },
   {
@@ -165,6 +166,7 @@ export const MAIN_NAV_ITEMS: readonly NavItem[] = [
   { id: 'transfer', label: 'Transfer', shortLabel: 'Transfer' },
   { id: 'absensi', label: 'Daftar Hadir Karyawan', shortLabel: 'Presensi Staff' },
   { id: 'farmasi-bhp', label: 'Manajemen Farmasi & BHP', shortLabel: 'Stok Obat & BHP' },
+  { id: 'kwitansi-farmasi', label: 'Kwitansi Farmasi', shortLabel: 'Kwitansi Farmasi' },
   { id: 'keuangan-pembukuan', label: 'Sistem Keuangan & Pembukuan', shortLabel: 'Buku Kas & Keuangan' },
   { id: 'petugas-kasir', label: 'Petugas Kasir', shortLabel: 'Petugas Kasir' },
   { id: 'petugas-admin-klinik', label: 'Petugas Admin Klinik', shortLabel: 'Petugas Admin Klinik' },

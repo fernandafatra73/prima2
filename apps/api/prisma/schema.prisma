@@ -629,6 +629,35 @@ model FarmasiBhp {
   telponPenyedia String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  kwitansiItems  FarmasiKwitansiItem[]
+}
+
+/// Kwitansi penjualan obat/BHP ke pasien — membuat kwitansi otomatis
+/// mengurangi stok FarmasiBhp sesuai jumlah terjual, dan menghapus
+/// kwitansi mengembalikan stok tersebut.
+model FarmasiKwitansi {
+  id            String        @id @default(cuid())
+  noKwitansi    String        @unique
+  namaPasien    String
+  tanggal       DateTime      @default(now())
+  paymentStatus PaymentStatus @default(LUNAS)
+  petugasKasir  String?
+  totalHarga    Decimal       @default(0)
+  items         FarmasiKwitansiItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model FarmasiKwitansiItem {
+  id           String          @id @default(cuid())
+  kwitansiId   String
+  kwitansi     FarmasiKwitansi @relation(fields: [kwitansiId], references: [id], onDelete: Cascade)
+  farmasiBhpId String
+  farmasiBhp   FarmasiBhp      @relation(fields: [farmasiBhpId], references: [id])
+  namaSnapshot String
+  qty          Int
+  hargaSatuan  Decimal
+  subtotal     Decimal
 }
 
 model AbsensiKaryawan {

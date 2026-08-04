@@ -34,6 +34,26 @@ export async function nextRegCode(prisma: PrismaClient): Promise<string> {
   return `${prefix}-${String(maxSeq + 1).padStart(3, '0')}`;
 }
 
+export async function nextFarmasiKwitansiCode(prisma: PrismaClient): Promise<string> {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const prefix = `KF-${y}${m}${d}`;
+
+  const existing = await prisma.farmasiKwitansi.findMany({
+    where: { noKwitansi: { startsWith: prefix } },
+    select: { noKwitansi: true },
+  });
+
+  const maxSeq = maxSequenceSuffix(
+    existing.map((k) => k.noKwitansi),
+    prefix,
+  );
+
+  return `${prefix}-${String(maxSeq + 1).padStart(3, '0')}`;
+}
+
 export async function nextPendaftaranUmumCode(prisma: PrismaClient): Promise<string> {
   const now = new Date();
   const y = String(now.getFullYear()).slice(-2); // e.g. 26

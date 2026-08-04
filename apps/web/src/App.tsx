@@ -53,6 +53,7 @@ import { TempletPage } from './pages/TempletPage.tsx';
 import { AnalisaFotoRontgenPage } from './pages/AnalisaFotoRontgenPage.tsx';
 import { AdminPage } from './pages/AdminPage.tsx';
 import { FarmasiBhpPage } from './pages/FarmasiBhpPage.tsx';
+import { FarmasiKwitansiPage } from './pages/FarmasiKwitansiPage.tsx';
 import { AbsensiPage } from './pages/AbsensiPage.tsx';
 import { KeuanganPembukuanPage } from './pages/KeuanganPembukuanPage.tsx';
 import { PetugasKasirPage } from './pages/PetugasKasirPage.tsx';
@@ -197,6 +198,8 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
       return <AdminPage />;
     case 'farmasi-bhp':
       return <FarmasiBhpPage />;
+    case 'kwitansi-farmasi':
+      return <FarmasiKwitansiPage />;
     case 'absensi':
       return <AbsensiPage />;
     case 'keuangan-pembukuan':

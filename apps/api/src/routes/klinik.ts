@@ -2,6 +2,8 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import { Decimal } from '../generated/prisma/internal/prismaNamespace.js';
 import { prisma } from '../lib/prisma.js';
 import { serializeDecimal } from '../lib/serialize.js';
+import { buildPaginationMeta, parsePagination } from '../lib/pagination.js';
+import { nextFarmasiKwitansiCode } from '../lib/regCode.js';
 
 function badRequest(reply: FastifyReply, message: string): FastifyReply {
   return reply.status(400).send({ error: message });
@@ -208,6 +210,203 @@ export async function registerKlinikRoutes(app: FastifyInstance): Promise<void> 
     } catch {
       return reply.status(404).send({ error: 'Data tidak ditemukan' });
     }
+  });
+
+  // ─── Kwitansi Farmasi (penjualan obat/BHP ke pasien) ────────────────────────
+
+  interface FarmasiKwitansiSerialized {
+    id: string;
+    noKwitansi: string;
+    namaPasien: string;
+    tanggal: string;
+    paymentStatus: string;
+    petugasKasir: string | null;
+    totalHarga: string | null;
+    items: {
+      id: string;
+      farmasiBhpId: string;
+      nama: string;
+      qty: number;
+      hargaSatuan: string | null;
+      subtotal: string | null;
+    }[];
+  }
+
+  function serializeKwitansi(k: {
+    id: string;
+    noKwitansi: string;
+    namaPasien: string;
+    tanggal: Date;
+    paymentStatus: string;
+    petugasKasir: string | null;
+    totalHarga: unknown;
+    items: {
+      id: string;
+      farmasiBhpId: string;
+      namaSnapshot: string;
+      qty: number;
+      hargaSatuan: unknown;
+      subtotal: unknown;
+    }[];
+  }): FarmasiKwitansiSerialized {
+    return {
+      id: k.id,
+      noKwitansi: k.noKwitansi,
+      namaPasien: k.namaPasien,
+      tanggal: k.tanggal.toISOString(),
+      paymentStatus: k.paymentStatus,
+      petugasKasir: k.petugasKasir,
+      totalHarga: serializeDecimal(k.totalHarga as never),
+      items: k.items.map((it) => ({
+        id: it.id,
+        farmasiBhpId: it.farmasiBhpId,
+        nama: it.namaSnapshot,
+        qty: it.qty,
+        hargaSatuan: serializeDecimal(it.hargaSatuan as never),
+        subtotal: serializeDecimal(it.subtotal as never),
+      })),
+    };
+  }
+
+  app.get<{ Querystring: { q?: string; page?: string; limit?: string } }>(
+    '/api/farmasi-kwitansi',
+    async (req) => {
+      const { page, limit, skip } = parsePagination(req.query);
+      const q = req.query.q?.trim();
+      const where = q
+        ? { OR: [{ namaPasien: { contains: q } }, { noKwitansi: { contains: q } }] }
+        : {};
+      const [total, items] = await Promise.all([
+        prisma.farmasiKwitansi.count({ where }),
+        prisma.farmasiKwitansi.findMany({
+          where,
+          include: { items: true },
+          orderBy: { tanggal: 'desc' },
+          skip,
+          take: limit,
+        }),
+      ]);
+      return {
+        items: items.map(serializeKwitansi),
+        pagination: buildPaginationMeta(total, page, limit),
+      };
+    },
+  );
+
+  app.post<{
+    Body: {
+      namaPasien: string;
+      paymentStatus?: 'BELUM_LUNAS' | 'LUNAS';
+      petugasKasir?: string;
+      items: { farmasiBhpId: string; qty: number }[];
+    };
+  }>('/api/farmasi-kwitansi', async (req, reply) => {
+    const b = req.body;
+    if (!b.namaPasien?.trim()) return badRequest(reply, 'Nama pasien wajib diisi');
+    if (!Array.isArray(b.items) || b.items.length === 0) {
+      return badRequest(reply, 'Pilih minimal satu obat/BHP');
+    }
+    for (const it of b.items) {
+      if (!it.farmasiBhpId || !Number.isInteger(it.qty) || it.qty < 1) {
+        return badRequest(reply, 'Jumlah tiap item wajib diisi dengan angka bulat minimal 1');
+      }
+    }
+
+    try {
+      const kwitansi = await prisma.$transaction(async (tx) => {
+        const noKwitansi = await nextFarmasiKwitansiCode(tx as never);
+        let totalHarga = new Decimal(0);
+        const itemsData: {
+          farmasiBhpId: string;
+          namaSnapshot: string;
+          qty: number;
+          hargaSatuan: InstanceType<typeof Decimal>;
+          subtotal: InstanceType<typeof Decimal>;
+        }[] = [];
+
+        for (const it of b.items) {
+          const stok = await tx.farmasiBhp.findUnique({ where: { id: it.farmasiBhpId } });
+          if (!stok) throw new Error(`Item obat/BHP tidak ditemukan`);
+          if (stok.stok < it.qty) {
+            throw new Error(`Stok "${stok.nama}" tidak cukup (tersisa ${stok.stok})`);
+          }
+          const hargaSatuan = stok.hargaJual;
+          const subtotal = hargaSatuan.mul(it.qty);
+          totalHarga = totalHarga.add(subtotal);
+          itemsData.push({
+            farmasiBhpId: stok.id,
+            namaSnapshot: stok.nama,
+            qty: it.qty,
+            hargaSatuan,
+            subtotal,
+          });
+          await tx.farmasiBhp.update({
+            where: { id: stok.id },
+            data: { stok: { decrement: it.qty } },
+          });
+        }
+
+        return tx.farmasiKwitansi.create({
+          data: {
+            noKwitansi,
+            namaPasien: b.namaPasien.trim(),
+            paymentStatus: b.paymentStatus === 'BELUM_LUNAS' ? 'BELUM_LUNAS' : 'LUNAS',
+            petugasKasir: b.petugasKasir?.trim() || null,
+            totalHarga,
+            items: { create: itemsData },
+          },
+          include: { items: true },
+        });
+      });
+
+      return reply.status(201).send({ item: serializeKwitansi(kwitansi) });
+    } catch (err: unknown) {
+      return badRequest(reply, err instanceof Error ? err.message : 'Gagal membuat kwitansi farmasi');
+    }
+  });
+
+  app.patch<{
+    Params: { id: string };
+    Body: { namaPasien?: string; paymentStatus?: 'BELUM_LUNAS' | 'LUNAS'; petugasKasir?: string };
+  }>('/api/farmasi-kwitansi/:id', async (req, reply) => {
+    const existing = await prisma.farmasiKwitansi.findUnique({
+      where: { id: req.params.id },
+      include: { items: true },
+    });
+    if (!existing) return reply.status(404).send({ error: 'Kwitansi tidak ditemukan' });
+
+    const item = await prisma.farmasiKwitansi.update({
+      where: { id: req.params.id },
+      data: {
+        namaPasien: req.body.namaPasien?.trim() || existing.namaPasien,
+        paymentStatus: req.body.paymentStatus ?? existing.paymentStatus,
+        petugasKasir:
+          req.body.petugasKasir !== undefined ? req.body.petugasKasir?.trim() || null : existing.petugasKasir,
+      },
+      include: { items: true },
+    });
+
+    return { item: serializeKwitansi(item) };
+  });
+
+  app.delete<{ Params: { id: string } }>('/api/farmasi-kwitansi/:id', async (req, reply) => {
+    const existing = await prisma.farmasiKwitansi.findUnique({
+      where: { id: req.params.id },
+      include: { items: true },
+    });
+    if (!existing) return reply.status(404).send({ error: 'Kwitansi tidak ditemukan' });
+
+    await prisma.$transaction(async (tx) => {
+      for (const it of existing.items) {
+        await tx.farmasiBhp.update({
+          where: { id: it.farmasiBhpId },
+          data: { stok: { increment: it.qty } },
+        });
+      }
+      await tx.farmasiKwitansi.delete({ where: { id: req.params.id } });
+    });
+
+    return { ok: true };
   });
 
   // ─── Daftar Hadir Karyawan (Absensi / Presensi) ─────────────────────────────
