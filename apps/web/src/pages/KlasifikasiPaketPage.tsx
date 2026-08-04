@@ -24,13 +24,14 @@ export interface PaketLabData {
 
 const KLASIFIKASI_TABS = [
   'Hematologi',
+  'Diffcount',
   'Kimia darah',
   'Diabetes',
   'Imunologi',
   'Urinalisa',
   'Urine rutin',
-  'Diffcount',
   'Laju Endap Darah',
+  'Widal',
 ] as const;
 
 interface TableRowItem {
@@ -197,6 +198,7 @@ export function KlasifikasiPaketPage() {
       else if (kName.toLowerCase().includes('urinalisa')) kName = 'Urinalisa';
       else if (kName.toLowerCase().includes('diffcount')) kName = 'Diffcount';
       else if (kName.toLowerCase().includes('laju endap darah')) kName = 'Laju Endap Darah';
+      else if (kName.toLowerCase().includes('widal')) kName = 'Widal';
 
       pkg.items.forEach((it, iIndex) => {
         all.push({
@@ -328,7 +330,7 @@ export function KlasifikasiPaketPage() {
             Klasifikasi Paket & Nilai Rujukan Laboratorium
           </h1>
           <p className="view-subtitle" style={{ color: '#475569' }}>
-            Daftar Paket Langsung Jadi: <b>Hematologi, Kimia darah, Diabetes, Imunologi, Urinalisa, Urine Rutin, Diffcount, dan Laju Endap Darah</b> lengkap dengan pemeriksaan, hasil (satuan), nilai rujukan, dan harga.
+            Daftar Paket Langsung Jadi: <b>Hematologi, Diffcount, Kimia darah, Diabetes, Imunologi, Urinalisa, Urine Rutin, Laju Endap Darah, dan Widal</b> lengkap dengan pemeriksaan, hasil (satuan), nilai rujukan, dan harga.
           </p>
         </div>
 
@@ -351,7 +353,7 @@ export function KlasifikasiPaketPage() {
               boxShadow: '0 2px 4px rgba(14, 165, 233, 0.15)',
             }}
           >
-            {initLoading ? '⚡ Memproses...' : '⚡ Inisialisasi 8 Paket Langsung Jadi'}
+            {initLoading ? '⚡ Memproses...' : '⚡ Inisialisasi 9 Paket Langsung Jadi'}
           </button>
 
           <button

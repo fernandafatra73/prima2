@@ -1670,12 +1670,11 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         urutan: 6,
         harga: 200000,
         items: [
-          { pemeriksaan: 'Widal S. Typhi O & H', nilaiRujukan: '< 1/80', satuan: 'Titer', harga: 50000, urutan: 1 },
-          { pemeriksaan: 'HBsAg', nilaiRujukan: 'Non-Reaktif', satuan: '-', harga: 60000, urutan: 2 },
-          { pemeriksaan: 'Anti-HBs', nilaiRujukan: '> 10 mIU/mL', satuan: 'mIU/mL', harga: 70000, urutan: 3 },
-          { pemeriksaan: 'Dengue IgG / IgM', nilaiRujukan: 'Negatif', satuan: '-', harga: 120000, urutan: 4 },
-          { pemeriksaan: 'Anti-HIV', nilaiRujukan: 'Non-Reaktif', satuan: '-', harga: 90000, urutan: 5 },
-          { pemeriksaan: 'TPHA / VDRL', nilaiRujukan: 'Non-Reaktif', satuan: '-', harga: 70000, urutan: 6 },
+          { pemeriksaan: 'HBsAg', nilaiRujukan: 'Non-Reaktif', satuan: '-', harga: 60000, urutan: 1 },
+          { pemeriksaan: 'Anti-HBs', nilaiRujukan: '> 10 mIU/mL', satuan: 'mIU/mL', harga: 70000, urutan: 2 },
+          { pemeriksaan: 'Dengue IgG / IgM', nilaiRujukan: 'Negatif', satuan: '-', harga: 120000, urutan: 3 },
+          { pemeriksaan: 'Anti-HIV', nilaiRujukan: 'Non-Reaktif', satuan: '-', harga: 90000, urutan: 4 },
+          { pemeriksaan: 'TPHA / VDRL', nilaiRujukan: 'Non-Reaktif', satuan: '-', harga: 70000, urutan: 5 },
         ],
       },
       {
@@ -1697,6 +1696,14 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         harga: 30000,
         items: [
           { pemeriksaan: 'LED', nilaiRujukan: '< 20 mm/jam', satuan: 'mm/jam', harga: 30000, urutan: 1 },
+        ],
+      },
+      {
+        nama: 'Widal',
+        urutan: 9,
+        harga: 50000,
+        items: [
+          { pemeriksaan: 'Widal S. Typhi O & H', nilaiRujukan: '< 1/80', satuan: 'Titer', harga: 50000, urutan: 1 },
         ],
       },
     ];

@@ -18,6 +18,7 @@ import {
   type SuratKeteranganRujukanData,
 } from '../pdf/SuratKeteranganRujukanDocument.tsx';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
+import { KopSuratPreviewDocument } from '../pdf/KopSuratPreviewDocument.tsx';
 import { pdf } from '@react-pdf/renderer';
 import '../components/ui/ui.css';
 
@@ -58,6 +59,9 @@ function KopSuratSection() {
   const [editing, setEditing] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [form, setForm] = useState({ namaKlinik: '', alamat: '', telepon: '', logoDataUrl: null as string | null });
+  const [previewing, setPreviewing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
 
   const fetchKopSurat = useCallback(async () => {
     setLoading(true);
@@ -128,6 +132,23 @@ function KopSuratSection() {
     }
   }
 
+  async function handlePreview() {
+    if (!item) return;
+    setPreviewing(true);
+    try {
+      const logoSrc = item.logoDataUrl || (await loadLogoDataUrl().catch(() => ''));
+      const blob = await pdf(
+        <KopSuratPreviewDocument
+          data={{ namaKlinik: item.namaKlinik, alamat: item.alamat, telepon: item.telepon, logoSrc }}
+        />,
+      ).toBlob();
+      setPreviewBlob(blob);
+      setPreviewOpen(true);
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
   return (
     <div className="list-page">
       <header className="list-page__header">
@@ -172,8 +193,10 @@ function KopSuratSection() {
                     <TableRowActions
                       onEdit={openEdit}
                       onDelete={() => void handleReset()}
+                      onPrint={() => void handlePreview()}
                       editLabel="Ubah kop surat"
                       deleteLabel={resetting ? 'Menghapus…' : 'Hapus (kembalikan ke default)'}
+                      printLabel={previewing ? 'Membuat preview…' : 'Preview cetak kop surat'}
                     />
                   </td>
                 </tr>
@@ -234,6 +257,14 @@ function KopSuratSection() {
           <ModalFormFooter onCancel={() => setEditing(false)} submitLabel="Simpan Kop Surat" loading={saving} />
         </form>
       </Modal>
+
+      <SharingPdfPreviewModal
+        open={previewOpen}
+        blob={previewBlob}
+        filename={`Preview_Kop_Surat_${item?.namaKlinik.replace(/[^a-zA-Z0-9]/g, '_') ?? 'default'}.pdf`}
+        onClose={() => setPreviewOpen(false)}
+        title="Pratinjau Kop Surat"
+      />
     </div>
   );
 }
