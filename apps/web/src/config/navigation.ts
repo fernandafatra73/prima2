@@ -118,16 +118,6 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
     ],
   },
   {
-    id: 'klinik-umum',
-    label: 'Klinik Umum',
-    iconName: 'hospital',
-    items: [
-      { id: 'pendaftaran-umum', label: 'Pendaftaran Umum', shortLabel: 'Pendaftaran Umum' },
-      { id: 'absensi', label: 'Daftar Hadir Karyawan', shortLabel: 'Presensi Staff' },
-      { id: 'rekam-medis-umum', label: 'Rekam Medis Umum', shortLabel: 'Rekam Medis' },
-    ],
-  },
-  {
     id: 'farmasi',
     label: 'Farmasi & BHP',
     iconName: 'pill',

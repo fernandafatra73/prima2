@@ -38,7 +38,6 @@ const CATEGORY_ICONS: Record<string, (props: { className?: string }) => JSX.Elem
   'perhitungan-pajak': IconCurrency,
   'master-sistem': IconShield,
   laboratorium: IconTag,
-  'klinik-umum': IconStethoscope,
   farmasi: IconDocument,
   anatomi: IconStethoscope,
 };
@@ -60,7 +59,6 @@ export function Sidebar({ activeId, onNavigate, role }: SidebarProps) {
     'perhitungan-pajak': true,
     'master-sistem': true,
     laboratorium: true,
-    'klinik-umum': true,
     farmasi: true,
     anatomi: true,
   }));
