@@ -1981,6 +1981,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       dokterPengirim?: string;
       klinis?: string;
       admin?: string;
+      status?: 'MENUNGGU' | 'SELESAI';
     };
   }>('/api/pendaftaran-umum/:id', async (req, reply) => {
     const existing = await prisma.pendaftaranUmum.findUnique({ where: { id: req.params.id } });
@@ -1998,6 +1999,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         dokterPengirim: req.body.dokterPengirim !== undefined ? req.body.dokterPengirim?.trim() || null : existing.dokterPengirim,
         klinis: req.body.klinis !== undefined ? req.body.klinis?.trim() || null : existing.klinis,
         admin: req.body.admin !== undefined ? req.body.admin?.trim() || null : existing.admin,
+        status: req.body.status ?? existing.status,
       },
     });
     return { item };

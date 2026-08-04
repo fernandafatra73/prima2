@@ -4,7 +4,8 @@ const SATUAN = [
   'enam belas', 'tujuh belas', 'delapan belas', 'sembilan belas',
 ];
 
-function angkaKeKata(n: number): string {
+/** Ubah bilangan bulat non-negatif menjadi rangkaian kata bahasa Indonesia, mis. 2 -> "dua". */
+export function angkaKeKata(n: number): string {
   if (n < 20) return SATUAN[n]!;
   if (n < 100) {
     const sisa = n % 10;

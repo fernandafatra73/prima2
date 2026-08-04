@@ -597,19 +597,25 @@ model PaketLabItem {
   updatedAt    DateTime @updatedAt
 }
 
+enum PendaftaranUmumStatus {
+  MENUNGGU
+  SELESAI
+}
+
 model PendaftaranUmum {
-  id             String   @id @default(cuid())
-  noRegistrasi   String   @unique
+  id             String                @id @default(cuid())
+  noRegistrasi   String                @unique
   namaPasien     String
   umur           String?
   alamat         String?
   telpon         String?
-  tanggalMasuk   DateTime @default(now())
+  tanggalMasuk   DateTime              @default(now())
   dokterPengirim String?
   klinis         String?
   admin          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  status         PendaftaranUmumStatus @default(MENUNGGU)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 }
 
 model FarmasiBhp {

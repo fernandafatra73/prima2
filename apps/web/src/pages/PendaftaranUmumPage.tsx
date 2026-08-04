@@ -13,6 +13,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api.ts';
 import type { PaginatedResponse } from '../lib/pagination.ts';
 import { PendaftaranReportDocument } from '../pdf/PendaftaranReportDocument.tsx';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
+import { angkaKeKata } from '../lib/terbilang.ts';
 import '../components/ui/ui.css';
 
 function todayDateStr(): string {
@@ -34,6 +35,22 @@ interface PendaftaranUmumItem {
   readonly dokterPengirim: string | null;
   readonly klinis: string | null;
   readonly admin: string | null;
+  readonly status: 'MENUNGGU' | 'SELESAI';
+}
+
+/** Ambil nomor antrian dari 3 digit terakhir kode registrasi (mis. PH260805003 -> 3). */
+function parseAntrianNumber(noRegistrasi: string): number | null {
+  const match = /(\d{3})$/.exec(noRegistrasi);
+  return match ? Number(match[1]) : null;
+}
+
+/** Umumkan nomor antrian berikutnya lewat speaker (Web Speech API, suara Indonesia). */
+function announceAntrian(nomor: number) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+  const utter = new SpeechSynthesisUtterance(`Nomor antrian ${angkaKeKata(nomor)}. Silakan masuk.`);
+  utter.lang = 'id-ID';
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
 }
 
 function formatWhatsAppNumber(phone: string | null): string | null {
@@ -230,6 +247,31 @@ export function PendaftaranUmumPage() {
     }
   }
 
+  async function handleTandaiSelesai(item: PendaftaranUmumItem) {
+    setError(null);
+    try {
+      await apiPatch(`/api/pendaftaran-umum/${item.id}`, { status: 'SELESAI' });
+      await reload();
+
+      const currentAntrian = parseAntrianNumber(item.noRegistrasi);
+      if (currentAntrian === null) return;
+      const nextAntrian = currentAntrian + 1;
+      const prefix = item.noRegistrasi.slice(0, -3);
+      const expectedNextCode = `${prefix}${String(nextAntrian).padStart(3, '0')}`;
+
+      const today = todayDateStr();
+      const res = await apiGet<PaginatedResponse<PendaftaranUmumItem>>(
+        `/api/pendaftaran-umum?startDate=${today}&endDate=${today}&limit=200`,
+      );
+      const next = res.items.find((p) => p.noRegistrasi === expectedNextCode && p.status === 'MENUNGGU');
+      if (next) {
+        announceAntrian(nextAntrian);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menandai selesai');
+    }
+  }
+
   return (
     <ListPageShell
       title="Pendaftaran Umum"
@@ -320,6 +362,7 @@ export function PendaftaranUmumPage() {
         <table className="data-table">
           <thead>
             <tr style={{ background: '#e0f2fe' }}>
+              <th style={{ color: '#0369a1' }}>No. Antrian</th>
               <th style={{ color: '#0369a1' }}>No Registrasi</th>
               <th style={{ color: '#0369a1' }}>Nama Pasien</th>
               <th style={{ color: '#0369a1' }}>Umur</th>
@@ -328,18 +371,21 @@ export function PendaftaranUmumPage() {
               <th style={{ color: '#0369a1' }}>Tanggal Masuk</th>
               <th style={{ color: '#0369a1' }}>Dokter Pengirim</th>
               <th style={{ color: '#0369a1' }}>Klinis</th>
+              <th style={{ color: '#0369a1' }}>Status</th>
               <th style={{ color: '#0369a1' }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem' }}>
+                <td colSpan={11} style={{ textAlign: 'center', padding: '2rem' }}>
                   Belum ada data pendaftaran umum.
                 </td>
               </tr>
             ) : (
-              items.map((item, idx) => (
+              items.map((item, idx) => {
+                const antrian = parseAntrianNumber(item.noRegistrasi);
+                return (
                 <tr
                   key={item.id}
                   style={{
@@ -347,6 +393,7 @@ export function PendaftaranUmumPage() {
                     borderBottom: '1px solid #bae6fd',
                   }}
                 >
+                  <td style={{ fontWeight: 700, color: '#0369a1' }}>{antrian ?? '—'}</td>
                   <td>{item.noRegistrasi}</td>
                   <td><strong>{item.namaPasien}</strong></td>
                   <td>{item.umur || '-'}</td>
@@ -408,17 +455,47 @@ export function PendaftaranUmumPage() {
                   <td>{item.dokterPengirim || '-'}</td>
                   <td>{item.klinis || '-'}</td>
                   <td>
-                    <TableRowActions
-                      onEdit={() => openEdit(item)}
-                      onDelete={() => setDeleting(item)}
-                      onPrint={() => setPreviewItem(item)}
-                      editLabel="Ubah pendaftaran"
-                      deleteLabel="Hapus pendaftaran"
-                      printLabel="Cetak pendaftaran"
-                    />
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '999px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        color: item.status === 'SELESAI' ? '#15803d' : '#b45309',
+                        background: item.status === 'SELESAI' ? '#f0fdf4' : '#fffbeb',
+                        border: `1px solid ${item.status === 'SELESAI' ? '#bbf7d0' : '#fde68a'}`,
+                      }}
+                    >
+                      {item.status === 'SELESAI' ? 'SELESAI' : 'MENUNGGU'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {item.status === 'MENUNGGU' && (
+                        <button
+                          type="button"
+                          className="btn btn--xs btn--primary"
+                          onClick={() => void handleTandaiSelesai(item)}
+                          title="Tandai selesai & umumkan nomor antrian berikutnya"
+                          style={{ padding: '0.3rem 0.6rem' }}
+                        >
+                          🔊 Selesai
+                        </button>
+                      )}
+                      <TableRowActions
+                        onEdit={() => openEdit(item)}
+                        onDelete={() => setDeleting(item)}
+                        onPrint={() => setPreviewItem(item)}
+                        editLabel="Ubah pendaftaran"
+                        deleteLabel="Hapus pendaftaran"
+                        printLabel="Cetak pendaftaran"
+                      />
+                    </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
