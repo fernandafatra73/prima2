@@ -458,7 +458,7 @@ export function PendaftaranUmumPage() {
                 <span>📋</span> Data Identitas &amp; Registrasi Pasien
               </h4>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label htmlFor="noRegistrasi" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
                     No. Registrasi (Otomatis)
@@ -506,6 +506,28 @@ export function PendaftaranUmumPage() {
                   />
                 </div>
 
+                <div>
+                  <label htmlFor="umur" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
+                    Umur Pasien
+                  </label>
+                  <input
+                    id="umur"
+                    name="umur"
+                    type="text"
+                    value={formData.umur}
+                    onChange={handleChange}
+                    placeholder="mis. 32 tahun / 24 bln"
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid #7dd3fc',
+                      background: '#ffffff',
+                      color: '#0f172a',
+                    }}
+                  />
+                </div>
+
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label htmlFor="namaPasien" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
                     Nama Lengkap Pasien <span style={{ color: '#ef4444' }}>*</span>
@@ -527,28 +549,6 @@ export function PendaftaranUmumPage() {
                       color: '#0f172a',
                       fontWeight: 700,
                       fontSize: '0.95rem',
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="umur" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Umur Pasien
-                  </label>
-                  <input
-                    id="umur"
-                    name="umur"
-                    type="text"
-                    value={formData.umur}
-                    onChange={handleChange}
-                    placeholder="mis. 32 tahun / 24 bln"
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
                     }}
                   />
                 </div>

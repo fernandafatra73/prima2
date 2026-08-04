@@ -3,6 +3,8 @@ import { PDFViewer } from '@react-pdf/renderer';
 import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { Modal } from '../components/ui/Modal.tsx';
 import { ConfirmModal } from '../components/ui/ConfirmModal.tsx';
+import { CetakAmplopLabModal, type CetakAmplopLabPasien } from '../components/CetakAmplopLabModal.tsx';
+import type { AppViewId } from '../config/navigation.ts';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
@@ -118,7 +120,11 @@ function formatDateDisplay(dateStr: string): string {
   }
 }
 
-export function LaboratoriumPage() {
+interface LaboratoriumPageProps {
+  readonly onNavigate?: (view: AppViewId) => void;
+}
+
+export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
   const { search, setSearch } = useListSearch();
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'custom'>('all');
   const [customStart, setCustomStart] = useState('');
@@ -162,6 +168,7 @@ export function LaboratoriumPage() {
 
   const [selected, setSelected] = useState<LabPasienItem | null>(null);
   const [previewItem, setPreviewItem] = useState<LabPasienItem | null>(null);
+  const [amplopItem, setAmplopItem] = useState<LabPasienItem | null>(null);
   const [labRows, setLabRows] = useState<LabTableRow[]>([]);
   const [analisList, setAnalisList] = useState<PetugasLabItem[]>([]);
   const [analisId, setAnalisId] = useState('');
@@ -609,6 +616,17 @@ export function LaboratoriumPage() {
           >
             📅 Pasien Hari Ini
           </button>
+          {onNavigate && (
+            <button
+              type="button"
+              className="btn btn--sm btn--ghost"
+              onClick={() => onNavigate('hitungan-led')}
+              style={{ border: '1px solid var(--color-border)' }}
+              title="Buka Hitungan LED"
+            >
+              🧮 Hitungan LED
+            </button>
+          )}
           <button
             type="button"
             className={`btn btn--sm ${timeFilter === 'week' ? 'btn--primary' : 'btn--ghost'}`}
@@ -700,7 +718,6 @@ export function LaboratoriumPage() {
             <th>Nama Pasien</th>
             <th>Umur / JK</th>
             <th>Dokter Pengirim</th>
-            <th>Hasil Pemeriksaan</th>
             <th>Status Hasil</th>
             <th>Aksi</th>
           </tr>
@@ -708,7 +725,7 @@ export function LaboratoriumPage() {
         <tbody>
           {items.length === 0 ? (
             <tr>
-              <td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>
+              <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
                 Belum ada data pendaftaran pasien laboratorium.
               </td>
             </tr>
@@ -726,65 +743,6 @@ export function LaboratoriumPage() {
                   {formatUmurTahun(item.umur)} ({item.jenisKelamin})
                 </td>
                 <td>{item.pengirim.nama}</td>
-                <td>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    {/* Nama Pemeriksaan Laboratorium */}
-                      {item.pemeriksaan.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginBottom: '0.15rem' }}>
-                          {item.pemeriksaan.map((p) => (
-                            <span
-                              key={p.id}
-                              style={{
-                                fontSize: '0.7rem',
-                                fontWeight: 600,
-                                padding: '0.1rem 0.45rem',
-                                borderRadius: '999px',
-                                background: 'var(--color-primary-soft, #ede9fe)',
-                                color: 'var(--color-primary, #7c3aed)',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {p.nama}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {/* Hasil atau placeholder */}
-                      {(() => {
-                        const parsed = parseLabKesan(item.kesan);
-                        const hasResult = parsed.rows.some((r) => r.hasil.trim() !== '');
-                        if (hasResult) {
-                          return (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                              {parsed.rows
-                                .filter((r) => r.hasil.trim() !== '' || r.pemeriksaan.trim() !== '')
-                                .slice(0, 3)
-                                .map((r, i) => (
-                                  <span key={i} style={{ fontSize: '0.82rem' }}>
-                                    <strong>{r.pemeriksaan}:</strong> {r.hasil || '—'}{' '}
-                                    {r.nilaiRujukan ? (
-                                      <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
-                                        ({r.nilaiRujukan})
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                ))}
-                              {parsed.rows.length > 3 && (
-                                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                                  +{parsed.rows.length - 3} pemeriksaan lainnya
-                                </span>
-                              )}
-                            </div>
-                          );
-                        }
-                        return (
-                          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
-                            Belum ada hasil
-                          </span>
-                        );
-                      })()}
-                  </div>
-                </td>
                 <td>
                   <span
                     className={`badge ${item.hasilStatus === 'SELESAI' ? 'badge--ok' : 'badge--pending'}`}
@@ -825,6 +783,14 @@ export function LaboratoriumPage() {
                       title="Preview & Cetak hasil lab"
                     >
                       🖨️ Preview & Cetak
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--secondary btn--sm"
+                      onClick={() => setAmplopItem(item)}
+                      title="Cetak Amplop Hasil Laboratorium"
+                    >
+                      ✉️ Amplop
                     </button>
                   </div>
                 </td>
@@ -1447,6 +1413,12 @@ export function LaboratoriumPage() {
         loading={deleteLoading}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => void confirmDelete()}
+      />
+
+      <CetakAmplopLabModal
+        open={amplopItem !== null}
+        onClose={() => setAmplopItem(null)}
+        pasien={amplopItem as CetakAmplopLabPasien | null}
       />
     </ListPageShell>
   );

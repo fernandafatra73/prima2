@@ -82,7 +82,7 @@ function AccessDenied({ viewId }: { readonly viewId: AppViewId }) {
   );
 }
 
-function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN') {
+function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (view: AppViewId) => void) {
   if (!isViewAllowedForRole(viewId, role)) {
     return <AccessDenied viewId={viewId} />;
   }
@@ -107,7 +107,7 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN') {
     case 'harga-pemeriksaan-lab':
       return <HargaPemeriksaanLabPage />;
     case 'lab':
-      return <LaboratoriumPage />;
+      return <LaboratoriumPage onNavigate={navigate} />;
     case 'lab-duplikat':
       return <LabDuplikatPage />;
     case 'kwitansi-laboratorium':
@@ -248,7 +248,7 @@ export function App() {
       <MusicPlayerProvider>
         <PdfPreviewHost>
           <AppShell activeView={activeView} authUser={authUser} onNavigate={navigate} onLogout={handleLogout}>
-            {renderView(activeView, authUser.role)}
+            {renderView(activeView, authUser.role, navigate)}
           </AppShell>
         </PdfPreviewHost>
       </MusicPlayerProvider>

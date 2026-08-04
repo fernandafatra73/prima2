@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { DashboardCharts } from '../components/charts/DashboardCharts.tsx';
+import { RevenueTrendChart } from '../components/charts/RevenueTrendChart.tsx';
 import { useListRefresh } from '../context/ListRefreshContext.tsx';
 import { apiGet } from '../lib/api.ts';
 
@@ -85,6 +86,8 @@ export function DashboardPage() {
             selesaiHariIni={m.selesaiHariIni}
             totalPemeriksaan={m.totalPemeriksaan}
           />
+
+          <RevenueTrendChart />
         </>
       )}
     </>

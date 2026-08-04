@@ -2,6 +2,12 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import { Decimal } from '../generated/prisma/internal/prismaNamespace.js';
 import { prisma } from '../lib/prisma.js';
 import { toNumber } from '../lib/serialize.js';
+import {
+  buildBucketStarts,
+  bucketKeyFor,
+  bucketLabelFor,
+  type PendapatanRange,
+} from '../lib/pendapatanBuckets.js';
 
 function badRequest(reply: FastifyReply, message: string): FastifyReply {
   return reply.status(400).send({ error: message });
@@ -64,6 +70,48 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
         statusHasil: { menunggu: menungguHasil, selesai: hasilSelesai, percent: hasilPercent },
         statusBayar: { lunas: lunasCount, belum: totalPasien - lunasCount, percent: lunasPercent },
       },
+    };
+  });
+
+  app.get<{ Querystring: { range?: string } }>('/api/dashboard/pendapatan', async (req) => {
+    const range: PendapatanRange =
+      req.query.range === 'mingguan' || req.query.range === 'bulanan' || req.query.range === 'tahunan'
+        ? req.query.range
+        : 'harian';
+
+    const now = new Date();
+    const bucketStarts = buildBucketStarts(range, now);
+    const rangeStart = bucketStarts[0]!;
+
+    const records = await prisma.pasien.findMany({
+      where: { createdAt: { gte: rangeStart } },
+      select: { createdAt: true, totalHarga: true, totalSharing: true },
+    });
+
+    const pendapatanByBucket = new Map<string, number>();
+    const keuntunganByBucket = new Map<string, number>();
+    for (const r of records) {
+      const key = bucketKeyFor(range, r.createdAt);
+      const harga = toNumber(r.totalHarga);
+      const sharing = toNumber(r.totalSharing);
+      pendapatanByBucket.set(key, (pendapatanByBucket.get(key) ?? 0) + harga);
+      keuntunganByBucket.set(key, (keuntunganByBucket.get(key) ?? 0) + (harga - sharing));
+    }
+
+    const series = bucketStarts.map((d) => {
+      const key = bucketKeyFor(range, d);
+      return {
+        label: bucketLabelFor(range, d),
+        pendapatan: pendapatanByBucket.get(key) ?? 0,
+        keuntungan: keuntunganByBucket.get(key) ?? 0,
+      };
+    });
+
+    return {
+      range,
+      series,
+      totalPendapatan: series.reduce((s, b) => s + b.pendapatan, 0),
+      totalKeuntungan: series.reduce((s, b) => s + b.keuntungan, 0),
     };
   });
 

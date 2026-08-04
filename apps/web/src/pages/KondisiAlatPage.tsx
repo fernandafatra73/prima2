@@ -24,11 +24,36 @@ interface DuplikatRadiologiOption {
   readonly id: string;
   readonly nama: string;
   readonly regCode: string;
+  readonly umur: number;
 }
 
 const KV_OPTIONS = [40, 44, 45, 48, 50, 51, 55, 60, 65, 70, 75, 80, 85, 90, 100, 110, 120];
 const SEKON_OPTIONS = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.1, 0.125, 0.16, 0.2, 0.25, 0.32, 0.4, 0.5, 0.63, 0.8, 1];
-const MAS_OPTIONS = [0.001, 0.002, 0.005, 0.008, 0.01, 0.02, 0.04, 0.05, 0.08, 0.1, 0.125, 0.16, 0.2, 0.25, 0.32, 0.4];
+const MAS_OPTIONS = [0.001, 0.002, 0.005, 0.008, 0.01, 0.02, 0.04, 0.05, 0.08, 0.1, 0.125, 0.16, 0.2, 0.25, 0.32, 0.4, 1, 2];
+
+/** Faktor eksposi default berdasarkan umur pasien. */
+function computeKondisiAlatDefaults(umur: number): { kv: string; sekon: string; mAs: string } {
+  const { kv, sekon, mAs } = umur < 10 ? { kv: 40, sekon: 0.01, mAs: 1 } : { kv: 40, sekon: 0.02, mAs: 2 };
+  return { kv: String(kv), sekon: String(sekon), mAs: String(mAs) };
+}
+
+const BERAT_BADAN_NORMAL_TABLE: ReadonlyArray<{
+  readonly usia: string;
+  readonly lakiLaki: string;
+  readonly perempuan: string;
+}> = [
+  { usia: '0 Bulan (Lahir)', lakiLaki: '2,5 – 3,9', perempuan: '2,4 – 3,7' },
+  { usia: '6 Bulan', lakiLaki: '6,4 – 8,8', perempuan: '5,7 – 8,2' },
+  { usia: '1 Tahun', lakiLaki: '8,6 – 10,8', perempuan: '7,9 – 10,1' },
+  { usia: '2 Tahun', lakiLaki: '10,8 – 13,6', perempuan: '10,2 – 13,1' },
+  { usia: '3 Tahun', lakiLaki: '12,7 – 16,2', perempuan: '12,2 – 15,8' },
+  { usia: '5 Tahun', lakiLaki: '16,0 – 21,0', perempuan: '15,3 – 20,7' },
+  { usia: '6 – 8 Tahun', lakiLaki: '18 – 26', perempuan: '17 – 25' },
+  { usia: '9 – 11 Tahun', lakiLaki: '25 – 36', perempuan: '25 – 37' },
+  { usia: '12 – 14 Tahun', lakiLaki: '35 – 50', perempuan: '36 – 50' },
+  { usia: '15 – 18 Tahun', lakiLaki: '50 – 66', perempuan: '45 – 57' },
+  { usia: '18 – 70 Tahun', lakiLaki: '50 – 66', perempuan: '45 – 57' },
+];
 
 function formatDateDisplay(dateStr: string): string {
   try {
@@ -230,7 +255,15 @@ export function KondisiAlatPage() {
                 id="ka-nama"
                 required
                 value={form.namaPasien}
-                onChange={(e) => setForm((f) => ({ ...f, namaPasien: e.target.value }))}
+                onChange={(e) => {
+                  const nama = e.target.value;
+                  const selected = pasienOptions.find((p) => p.nama === nama);
+                  setForm((f) => ({
+                    ...f,
+                    namaPasien: nama,
+                    ...(selected ? computeKondisiAlatDefaults(selected.umur) : {}),
+                  }));
+                }}
               >
                 <option value="">-- Pilih Pasien (dari Duplikat Radiologi) --</option>
                 {pasienOptions.map((p) => (
@@ -308,6 +341,31 @@ export function KondisiAlatPage() {
                 value={form.beratBadan}
                 onChange={(e) => setForm((f) => ({ ...f, beratBadan: e.target.value }))}
               />
+            </div>
+            <div className="form-field form-field--full">
+              <details>
+                <summary className="form-hint" style={{ cursor: 'pointer' }}>
+                  Lihat referensi berat badan normal per usia
+                </summary>
+                <table className="data-table" style={{ marginTop: '0.5rem' }}>
+                  <thead>
+                    <tr>
+                      <th>Rentang Usia</th>
+                      <th>Laki-Laki (kg)</th>
+                      <th>Perempuan (kg)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {BERAT_BADAN_NORMAL_TABLE.map((row) => (
+                      <tr key={row.usia}>
+                        <td>{row.usia}</td>
+                        <td>{row.lakiLaki}</td>
+                        <td>{row.perempuan}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </details>
             </div>
             <ModalFormFooter
               onCancel={closeModal}

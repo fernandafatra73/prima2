@@ -77,6 +77,18 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
     ],
   },
   {
+    id: 'perhitungan-pajak',
+    label: 'Perhitungan Pajak',
+    iconName: 'currency',
+    items: [
+      { id: 'laporan-pajak', label: 'Pajak Radiologi - Laporan Tahunan', shortLabel: 'Pajak Radiologi (Tahunan)' },
+      { id: 'laporan-pajak-bulanan', label: 'Pajak Radiologi - Laporan Bulanan', shortLabel: 'Pajak Radiologi (Bulanan)' },
+      { id: 'laporan-pajak-lab', label: 'Pajak Laboratorium - Laporan Tahunan', shortLabel: 'Pajak Lab (Tahunan)' },
+      { id: 'laporan-pajak-bulanan-lab', label: 'Pajak Laboratorium - Laporan Bulanan', shortLabel: 'Pajak Lab (Bulanan)' },
+      { id: 'laporan-neraca', label: 'Laporan Neraca', shortLabel: 'Laporan Neraca' },
+    ],
+  },
+  {
     id: 'keuangan',
     label: 'Keuangan',
     iconName: 'currency',
