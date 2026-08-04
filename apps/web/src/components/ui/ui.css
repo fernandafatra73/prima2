@@ -10,6 +10,15 @@
   50% { box-shadow: 0 0 0 12px rgba(3, 105, 161, 0); }
 }
 
+@keyframes fatra-rec-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.fatra-rec-dot {
+  animation: fatra-rec-blink 1.1s ease-in-out infinite;
+}
+
 .musik-ph-toggle--on {
   animation: musik-ph-pulse 1.6s ease-out infinite;
 }

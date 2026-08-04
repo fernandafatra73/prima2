@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import '../components/ui/ui.css';
 
 // Modul-level (bukan ref komponen) supaya kamera tetap menyala terus saat
 // pindah halaman lain di aplikasi — FatraPage unmount tidak akan mematikan
 // stream ini, sehingga saat kembali ke halaman Fatra video langsung tampil
 // tanpa minta izin kamera ulang.
 let sharedCameraStreamPromise: Promise<MediaStream> | null = null;
+
+/** ~10 x 10 cm di layar (96dpi: 1cm ≈ 37.8px). */
+const MONITOR_SIZE_PX = 378;
 
 function pickMimeType(): string {
   const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
@@ -20,6 +24,11 @@ function timestampForFilename(): string {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 }
 
+function formatOverlayTimestamp(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 type RecordingState = 'idle' | 'recording' | 'paused';
 
 /** Rekaman dipotong otomatis tiap 5 menit supaya file tidak menumpuk jadi satu video raksasa. */
@@ -32,6 +41,7 @@ export function FatraPage() {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [savedCount, setSavedCount] = useState(0);
   const [lastSavedName, setLastSavedName] = useState<string | null>(null);
+  const [now, setNow] = useState(() => new Date());
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -43,6 +53,12 @@ export function FatraPage() {
   useEffect(() => {
     recordingStateRef.current = recordingState;
   }, [recordingState]);
+
+  // Jam overlay di layar monitor, gaya timestamp CCTV — jalan terus selama halaman aktif.
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,13 +224,21 @@ export function FatraPage() {
     }, 'image/png');
   }
 
+  const statusLabel =
+    recordingState === 'recording' ? 'REC' : recordingState === 'paused' ? 'PAUSED' : cameraReady ? 'LIVE' : 'MENGHUBUNGKAN…';
+  const statusColor =
+    recordingState === 'recording' ? '#ef4444' : recordingState === 'paused' ? '#f59e0b' : cameraReady ? '#22c55e' : '#94a3b8';
+
   return (
     <div>
-      <h2 style={{ margin: '0 0 0.25rem' }}>📹 Fatra — CCTV Monitor</h2>
-      <p style={{ margin: '0 0 1rem', color: '#64748b' }}>
-        Live view kamera dari komputer ini. Rekaman otomatis terpotong &amp; tersimpan (terunduh)
-        tiap 5 menit selama merekam, dan segmen terakhir tersimpan saat Anda menekan Stop.
-      </p>
+      <div style={{ marginBottom: '1.25rem' }}>
+        <h2 style={{ margin: '0 0 0.25rem', color: '#0f172a' }}>📹 Fatra — CCTV Monitor</h2>
+        <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>
+          Live view kamera laptop ini pada monitor mini 10 × 10 cm. Rekaman otomatis terpotong &amp;
+          tersimpan (terunduh) tiap 5 menit selama merekam, dan segmen terakhir tersimpan saat Anda
+          menekan Stop.
+        </p>
+      </div>
 
       {cameraError && (
         <div
@@ -225,6 +249,7 @@ export function FatraPage() {
             borderRadius: '8px',
             marginBottom: '1rem',
             fontWeight: 600,
+            maxWidth: `${MONITOR_SIZE_PX}px`,
           }}
         >
           {cameraError}
@@ -240,35 +265,153 @@ export function FatraPage() {
             borderRadius: '8px',
             marginBottom: '1rem',
             fontWeight: 600,
+            maxWidth: `${MONITOR_SIZE_PX}px`,
           }}
         >
           {recordingError}
         </div>
       )}
 
+      {/* Bezel monitor — bingkai ganda ala CCTV fisik, ukuran layar ~10x10cm */}
       <div
         style={{
-          background: '#000',
-          borderRadius: '10px',
-          overflow: 'hidden',
-          border: '2px solid #1e293b',
-          maxWidth: '960px',
+          width: `${MONITOR_SIZE_PX}px`,
+          maxWidth: '100%',
+          background: 'linear-gradient(145deg, #1e293b, #0f172a)',
+          borderRadius: '18px',
+          padding: '10px',
+          boxShadow: '0 12px 28px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
         }}
       >
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          style={{ width: '100%', display: 'block' }}
-        />
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            aspectRatio: '1 / 1',
+            background: '#000',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            border: '1px solid #334155',
+          }}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+
+          {!cameraReady && !cameraError && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                color: '#94a3b8',
+              }}
+            >
+              <span style={{ fontSize: '2rem' }}>📷</span>
+              <span style={{ fontSize: '0.8rem' }}>Menghubungkan kamera…</span>
+            </div>
+          )}
+
+          {/* Status badge */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '10px',
+              left: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              background: 'rgba(15, 23, 42, 0.55)',
+              backdropFilter: 'blur(2px)',
+              padding: '0.25rem 0.55rem',
+              borderRadius: '999px',
+            }}
+          >
+            <span
+              className={recordingState === 'recording' ? 'fatra-rec-dot' : undefined}
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '999px',
+                background: statusColor,
+                display: 'inline-block',
+              }}
+            />
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.04em', color: '#f1f5f9' }}>
+              {statusLabel}
+            </span>
+          </div>
+
+          {/* Label kamera */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              fontSize: '0.62rem',
+              fontWeight: 700,
+              color: '#e2e8f0',
+              background: 'rgba(15, 23, 42, 0.55)',
+              backdropFilter: 'blur(2px)',
+              padding: '0.2rem 0.5rem',
+              borderRadius: '999px',
+            }}
+          >
+            CAM-01
+          </div>
+
+          {/* Timestamp overlay ala CCTV */}
+          {cameraReady && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '8px',
+                right: '10px',
+                fontSize: '0.62rem',
+                fontFamily: 'monospace',
+                color: '#e2e8f0',
+                textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+              }}
+            >
+              {formatOverlayTimestamp(now)}
+            </div>
+          )}
+        </div>
+
+        {/* Bar bawah bezel — dekorasi kecil ala monitor fisik */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '8px 4px 2px',
+          }}
+        >
+          <span style={{ fontSize: '0.6rem', color: '#64748b', letterSpacing: '0.06em' }}>FATRA MONITOR · 10×10cm</span>
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '999px',
+              background: cameraReady ? '#22c55e' : '#475569',
+            }}
+          />
+        </div>
       </div>
 
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.75rem',
+          gap: '0.6rem',
           marginTop: '1rem',
           flexWrap: 'wrap',
         }}
@@ -290,20 +433,6 @@ export function FatraPage() {
         <button type="button" className="btn btn--secondary" onClick={handleSaveImage} disabled={!cameraReady}>
           📷 Simpan Gambar
         </button>
-
-        <span
-          style={{
-            marginLeft: '0.5rem',
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color:
-              recordingState === 'recording' ? '#dc2626' : recordingState === 'paused' ? '#d97706' : '#94a3b8',
-          }}
-        >
-          {recordingState === 'recording' && '● Merekam'}
-          {recordingState === 'paused' && '❙❙ Dijeda'}
-          {recordingState === 'idle' && '○ Tidak merekam'}
-        </span>
       </div>
 
       <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#64748b' }}>
