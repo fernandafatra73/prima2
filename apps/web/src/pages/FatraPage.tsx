@@ -27,6 +27,7 @@ const SEGMENT_DURATION_MS = 5 * 60 * 1000;
 
 export function FatraPage() {
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [savedCount, setSavedCount] = useState(0);
@@ -139,8 +140,24 @@ export function FatraPage() {
 
   function handleStart() {
     if (recordingState !== 'idle') return;
-    const recorder = createRecorder();
-    if (!recorder) return;
+    if (!cameraReady) {
+      setRecordingError('Kamera belum siap. Tunggu video live tampil, lalu coba lagi.');
+      return;
+    }
+    setRecordingError(null);
+    let recorder: MediaRecorder | null;
+    try {
+      recorder = createRecorder();
+    } catch (err) {
+      setRecordingError(
+        err instanceof Error ? `Gagal memulai rekaman: ${err.message}` : 'Gagal memulai rekaman.',
+      );
+      return;
+    }
+    if (!recorder) {
+      setRecordingError('Gagal memulai rekaman: stream kamera tidak tersedia.');
+      return;
+    }
     recorderRef.current = recorder;
     recorder.start();
     setRecordingState('recording');
@@ -214,6 +231,21 @@ export function FatraPage() {
         </div>
       )}
 
+      {recordingError && (
+        <div
+          style={{
+            background: '#fee2e2',
+            color: '#dc2626',
+            padding: '0.75rem 1rem',
+            borderRadius: '8px',
+            marginBottom: '1rem',
+            fontWeight: 600,
+          }}
+        >
+          {recordingError}
+        </div>
+      )}
+
       <div
         style={{
           background: '#000',
@@ -241,7 +273,12 @@ export function FatraPage() {
           flexWrap: 'wrap',
         }}
       >
-        <button type="button" className="btn btn--primary" onClick={handleStart} disabled={recordingState !== 'idle'}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={handleStart}
+          disabled={recordingState !== 'idle' || !cameraReady}
+        >
           ⏺️ Start Rekaman
         </button>
         <button type="button" className="btn btn--secondary" onClick={handlePauseResume} disabled={recordingState === 'idle'}>
