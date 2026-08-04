@@ -38,6 +38,7 @@ export function FatraPage() {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [savedCount, setSavedCount] = useState(0);
   const [lastSavedName, setLastSavedName] = useState<string | null>(null);
@@ -60,36 +61,55 @@ export function FatraPage() {
     return () => clearInterval(id);
   }, []);
 
+  /**
+   * Ambil (atau, kalau forceNew, minta ulang) stream kamera dan pasang ke <video>.
+   * Dipakai saat mount halaman maupun saat tombol Refresh ditekan.
+   */
+  async function connectCamera(forceNew: boolean): Promise<void> {
+    if (forceNew) {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      sharedCameraStreamPromise = null;
+    }
+    try {
+      // Cache promise-nya di modul (bukan ref komponen) supaya kalau efek ini
+      // dipanggil dua kali (React StrictMode di mode dev) atau komponen
+      // di-mount ulang setelah pindah halaman, kamera tidak diminta ulang /
+      // dibuka dua kali berbarengan. Semua invocation cukup menunggu promise
+      // yang sama, dan streamnya tidak pernah dihentikan saat unmount.
+      if (!sharedCameraStreamPromise) {
+        sharedCameraStreamPromise = navigator.mediaDevices
+          .getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } } })
+          .catch((err: unknown) => {
+            sharedCameraStreamPromise = null;
+            throw err;
+          });
+      }
+      const stream = await sharedCameraStreamPromise;
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setCameraError(null);
+      setCameraReady(true);
+    } catch (err) {
+      setCameraReady(false);
+      setCameraError(
+        err instanceof Error ? `Gagal mengakses kamera: ${err.message}` : 'Gagal mengakses kamera.',
+      );
+    }
+  }
+
+  function handleRefresh() {
+    if (recordingState !== 'idle' || refreshing) return;
+    setRefreshing(true);
+    void connectCamera(true).finally(() => setRefreshing(false));
+  }
+
   useEffect(() => {
     let cancelled = false;
 
     async function setup() {
-      try {
-        // Cache promise-nya di modul (bukan ref komponen) supaya kalau efek ini
-        // dipanggil dua kali (React StrictMode di mode dev) atau komponen
-        // di-mount ulang setelah pindah halaman, kamera tidak diminta ulang /
-        // dibuka dua kali berbarengan. Semua invocation cukup menunggu promise
-        // yang sama, dan streamnya tidak pernah dihentikan saat unmount.
-        if (!sharedCameraStreamPromise) {
-          sharedCameraStreamPromise = navigator.mediaDevices
-            .getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } } })
-            .catch((err: unknown) => {
-              sharedCameraStreamPromise = null;
-              throw err;
-            });
-        }
-        const stream = await sharedCameraStreamPromise;
-        if (cancelled) return;
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-        setCameraReady(true);
-      } catch (err) {
-        if (!cancelled) {
-          setCameraError(
-            err instanceof Error ? `Gagal mengakses kamera: ${err.message}` : 'Gagal mengakses kamera.',
-          );
-        }
-      }
+      if (cancelled) return;
+      await connectCamera(false);
     }
 
     void setup();
@@ -432,6 +452,16 @@ export function FatraPage() {
         </button>
         <button type="button" className="btn btn--secondary" onClick={handleSaveImage} disabled={!cameraReady}>
           📷 Simpan Gambar
+        </button>
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={handleRefresh}
+          disabled={recordingState !== 'idle' || refreshing}
+          title={recordingState !== 'idle' ? 'Stop rekaman dulu sebelum refresh' : 'Sambungkan ulang kamera'}
+          style={{ border: '1px solid var(--color-border)' }}
+        >
+          {refreshing ? '⏳ Menyambungkan…' : '🔄 Refresh'}
         </button>
       </div>
 
