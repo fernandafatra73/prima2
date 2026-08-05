@@ -11,7 +11,9 @@ import {
   GajiKaryawanReportDocument,
   type GajiKaryawanReportData,
 } from '../pdf/GajiKaryawanReportDocument.tsx';
+import { SlipGajiReportDocument, type SlipGajiReportData } from '../pdf/SlipGajiReportDocument.tsx';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
+import { terbilangRupiah } from '../lib/terbilang.ts';
 import { pdf } from '@react-pdf/renderer';
 import '../components/ui/ui.css';
 
@@ -135,6 +137,7 @@ export function PenggajianPage() {
   const [previewingPdf, setPreviewingPdf] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+  const [printingSlipFor, setPrintingSlipFor] = useState<string | null>(null);
 
   // Gabungkan semua karyawan (Radiologi + Laboratorium + Klinik) dengan data gaji
   // bulan terpilih (kalau sudah pernah diisi) — supaya setiap karyawan otomatis
@@ -304,6 +307,39 @@ export function PenggajianPage() {
     }
   }
 
+  async function handleCetakSlip(row: PenggajianRow) {
+    if (!row.gaji) return;
+    setPrintingSlipFor(row.namaKaryawan);
+    try {
+      const logoSrc = await loadLogoDataUrl().catch(() => '');
+      const takeHome = computeTakeHome(row.gaji);
+      const data: SlipGajiReportData = {
+        logoSrc,
+        namaKaryawan: row.namaKaryawan,
+        jabatan: row.jabatan || '',
+        departemenLabel: DEPARTEMEN_LABEL[row.departemen] ?? row.departemen,
+        bulanLabel: formatBulanLabel(bulanFilter),
+        tanggalCetak: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }),
+        gajiPokokFormatted: formatRupiah(row.gaji.gajiPokok),
+        tunjanganFormatted: formatRupiah(row.gaji.tunjangan),
+        potonganFormatted: formatRupiah(row.gaji.potongan),
+        gajiBersihFormatted: formatRupiah(row.gaji.gajiBersih),
+        pph21Formatted: formatRupiah(computePph21(row.gaji)),
+        takeHomeFormatted: formatRupiah(takeHome),
+        takeHomeTerbilang: terbilangRupiah(takeHome),
+      };
+      const blob = await pdf(<SlipGajiReportDocument data={data} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `Slip_Gaji_${row.namaKaryawan.replace(/[^a-zA-Z0-9]/g, '_')}_${bulanFilter}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setPrintingSlipFor(null);
+    }
+  }
+
   return (
     <>
       <ListPageShell
@@ -407,8 +443,10 @@ export function PenggajianPage() {
                           <TableRowActions
                             onEdit={() => openFillRow(row)}
                             onDelete={() => setDeleting(row.gaji)}
+                            onPrint={() => void handleCetakSlip(row)}
                             editLabel="Ubah gaji"
                             deleteLabel="Hapus data gaji"
+                            printLabel={printingSlipFor === row.namaKaryawan ? 'Membuat slip...' : 'Cetak slip gaji perorangan'}
                           />
                         </td>
                       </>
