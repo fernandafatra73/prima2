@@ -25,6 +25,7 @@ import { DaftarTelponPage } from './pages/DaftarTelponPage.tsx';
 import { KalenderPage } from './pages/KalenderPage.tsx';
 import { WhatsAppPage } from './pages/WhatsAppPage.tsx';
 import { TelegramPage } from './pages/TelegramPage.tsx';
+import { KalkulatorPage } from './pages/KalkulatorPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { PasienPage } from './pages/PasienPage.tsx';
 import { PetugasLabPage } from './pages/PetugasLabPage.tsx';
@@ -115,6 +116,8 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
       return <WhatsAppPage />;
     case 'telegram':
       return <TelegramPage />;
+    case 'kalkulator':
+      return <KalkulatorPage />;
     case 'harga-pemeriksaan-lab':
       return <HargaPemeriksaanLabPage />;
     case 'lab':
