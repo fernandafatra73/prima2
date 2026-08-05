@@ -72,7 +72,6 @@ import { PetugasKasirPage } from './pages/PetugasKasirPage.tsx';
 import { PetugasAdminKlinikPage } from './pages/PetugasAdminKlinikPage.tsx';
 import { AdminPendaftaranPage } from './pages/AdminPendaftaranPage.tsx';
 import { LogoPerusahaanPage } from './pages/LogoPerusahaanPage.tsx';
-import { AnatomiPage } from './pages/AnatomiPage.tsx';
 import { useState } from 'react';
 
 function AccessDenied({ viewId }: { readonly viewId: AppViewId }) {
@@ -238,28 +237,6 @@ function renderViewContent(
       return <AdminPendaftaranPage />;
     case 'ai-foto':
       return <AiFotoPage />;
-    case 'anatomi-thorak':
-      return <AnatomiPage regio="thorak" />;
-    case 'anatomi-kepala':
-      return <AnatomiPage regio="kepala" />;
-    case 'anatomi-ossa-manus':
-      return <AnatomiPage regio="ossa-manus" />;
-    case 'anatomi-anthebrachi':
-      return <AnatomiPage regio="anthebrachi" />;
-    case 'anatomi-shoulder-joint':
-      return <AnatomiPage regio="shoulder-joint" />;
-    case 'anatomi-lumbosacral':
-      return <AnatomiPage regio="lumbosacral" />;
-    case 'anatomi-bno':
-      return <AnatomiPage regio="bno" />;
-    case 'anatomi-femur':
-      return <AnatomiPage regio="femur" />;
-    case 'anatomi-cruris':
-      return <AnatomiPage regio="cruris" />;
-    case 'anatomi-ankle-joint':
-      return <AnatomiPage regio="ankle-joint" />;
-    case 'anatomi-pedis':
-      return <AnatomiPage regio="pedis" />;
     default:
       return <DashboardPage />;
   }

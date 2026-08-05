@@ -130,17 +130,6 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
     iconName: 'stethoscope',
     items: [
       { id: 'ai-foto', label: 'AI Foto', shortLabel: 'AI Foto' },
-      { id: 'anatomi-thorak', label: 'Thorak', shortLabel: 'Thorak' },
-      { id: 'anatomi-kepala', label: 'Kepala', shortLabel: 'Kepala' },
-      { id: 'anatomi-ossa-manus', label: 'Ossa Manus', shortLabel: 'Ossa Manus' },
-      { id: 'anatomi-anthebrachi', label: 'Anthebrachi', shortLabel: 'Anthebrachi' },
-      { id: 'anatomi-shoulder-joint', label: 'Shoulder Joint', shortLabel: 'Shoulder Joint' },
-      { id: 'anatomi-lumbosacral', label: 'Lumbosacral', shortLabel: 'Lumbosacral' },
-      { id: 'anatomi-bno', label: 'BNO', shortLabel: 'BNO' },
-      { id: 'anatomi-femur', label: 'Femur', shortLabel: 'Femur' },
-      { id: 'anatomi-cruris', label: 'Cruris', shortLabel: 'Cruris' },
-      { id: 'anatomi-ankle-joint', label: 'Ankle Joint', shortLabel: 'Ankle Joint' },
-      { id: 'anatomi-pedis', label: 'Pedis', shortLabel: 'Pedis' },
     ],
   },
 ];
@@ -210,17 +199,6 @@ export const MAIN_NAV_ITEMS: readonly NavItem[] = [
   { id: 'ai-radiologi', label: 'AI Radiologi', shortLabel: 'AI Radiologi' },
   { id: 'tanda-tangan-elektronik', label: 'Tanda Tangan Elektronik', shortLabel: 'Tanda Tangan Elektronik' },
   { id: 'ai-foto', label: 'AI Foto', shortLabel: 'AI Foto' },
-  { id: 'anatomi-thorak', label: 'Thorak', shortLabel: 'Thorak' },
-  { id: 'anatomi-kepala', label: 'Kepala', shortLabel: 'Kepala' },
-  { id: 'anatomi-ossa-manus', label: 'Ossa Manus', shortLabel: 'Ossa Manus' },
-  { id: 'anatomi-anthebrachi', label: 'Anthebrachi', shortLabel: 'Anthebrachi' },
-  { id: 'anatomi-shoulder-joint', label: 'Shoulder Joint', shortLabel: 'Shoulder Joint' },
-  { id: 'anatomi-lumbosacral', label: 'Lumbosacral', shortLabel: 'Lumbosacral' },
-  { id: 'anatomi-bno', label: 'BNO', shortLabel: 'BNO' },
-  { id: 'anatomi-femur', label: 'Femur', shortLabel: 'Femur' },
-  { id: 'anatomi-cruris', label: 'Cruris', shortLabel: 'Cruris' },
-  { id: 'anatomi-ankle-joint', label: 'Ankle Joint', shortLabel: 'Ankle Joint' },
-  { id: 'anatomi-pedis', label: 'Pedis', shortLabel: 'Pedis' },
 ] as const;
 
 export type MainNavId = (typeof MAIN_NAV_ITEMS)[number]['id'];
