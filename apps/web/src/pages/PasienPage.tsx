@@ -177,6 +177,8 @@ export function PasienPage() {
   const [aiFotoDataUrl, setAiFotoDataUrl] = useState('');
   const [aiFotoAnalyzing, setAiFotoAnalyzing] = useState(false);
   const [aiFotoError, setAiFotoError] = useState<string | null>(null);
+  const [aiFotoNamaPenyakit, setAiFotoNamaPenyakit] = useState('');
+  const [aiFotoKesan, setAiFotoKesan] = useState('');
   const [nama, setNama] = useState('');
   const [tanggalLahir, setTanggalLahir] = useState('');
   const [umurManual, setUmurManual] = useState('');
@@ -478,6 +480,8 @@ export function PasienPage() {
   function openAiFotoModal() {
     setAiFotoDataUrl('');
     setAiFotoError(null);
+    setAiFotoNamaPenyakit('');
+    setAiFotoKesan('');
     setAiFotoOpen(true);
   }
 
@@ -489,6 +493,8 @@ export function PasienPage() {
       if (typeof reader.result === 'string') {
         setAiFotoDataUrl(reader.result);
         setAiFotoError(null);
+        setAiFotoNamaPenyakit('');
+        setAiFotoKesan('');
       }
     };
     reader.readAsDataURL(file);
@@ -505,15 +511,24 @@ export function PasienPage() {
       const res = await apiPost<{ namaPenyakit: string; kesan: string }>('/api/analisa-foto-ai/analyze', {
         fotoDataUrl: aiFotoDataUrl,
       });
-      resetForm();
-      setKesan(res.kesan);
-      setAiFotoOpen(false);
-      setAddOpen(true);
+      setAiFotoNamaPenyakit(res.namaPenyakit);
+      setAiFotoKesan(res.kesan);
     } catch (err) {
       setAiFotoError(err instanceof Error ? err.message : 'Gagal menganalisa foto dengan AI');
     } finally {
       setAiFotoAnalyzing(false);
     }
+  }
+
+  function handleSaveAiFotoKesan() {
+    resetForm();
+    setKesan(
+      aiFotoNamaPenyakit.trim()
+        ? `Kemungkinan: ${aiFotoNamaPenyakit.trim()}\n\n${aiFotoKesan}`
+        : aiFotoKesan,
+    );
+    setAiFotoOpen(false);
+    setAddOpen(true);
   }
 
   async function handlePrint(id: string) {
@@ -1548,6 +1563,33 @@ export function PasienPage() {
               {aiFotoAnalyzing ? '⏳ Menganalisa foto...' : '✨ Start — Analisa Foto dengan AI'}
             </button>
           </div>
+
+          {(aiFotoNamaPenyakit || aiFotoKesan) && (
+            <>
+              <div className="form-field form-grid--full">
+                <label htmlFor="pasien-ai-penyakit">Nama Penyakit</label>
+                <input
+                  id="pasien-ai-penyakit"
+                  value={aiFotoNamaPenyakit}
+                  onChange={(e) => setAiFotoNamaPenyakit(e.target.value)}
+                />
+              </div>
+              <div className="form-field form-grid--full">
+                <label htmlFor="pasien-ai-kesan">Kesan</label>
+                <textarea
+                  id="pasien-ai-kesan"
+                  rows={4}
+                  value={aiFotoKesan}
+                  onChange={(e) => setAiFotoKesan(e.target.value)}
+                />
+              </div>
+              <div className="form-field form-grid--full">
+                <button type="button" className="btn btn--primary" onClick={handleSaveAiFotoKesan}>
+                  Simpan
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </Modal>
 
