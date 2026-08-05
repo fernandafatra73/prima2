@@ -108,6 +108,36 @@ const HASIL_TABS = [
   { id: 'SELESAI', label: 'Selesai' },
 ] as const;
 
+/**
+ * Terima input umur bebas (angka saja = tahun, atau "6 bulan", "10 hari", "2 minggu")
+ * lalu ubah jadi tanggal lahir perkiraan. Null kalau teksnya tidak dikenali.
+ */
+function parseUmurManualToTanggalLahir(value: string): string | null {
+  const match = /^(\d+)\s*(tahun|thn|th|bulan|bln|bl|minggu|mgg|hari|hr)?$/i.exec(value.trim());
+  if (!match) return null;
+  const amount = parseInt(match[1], 10);
+  if (!Number.isFinite(amount) || amount < 0) return null;
+  const unit = (match[2] ?? 'tahun').toLowerCase();
+
+  if (unit.startsWith('th')) {
+    const y = new Date().getFullYear() - amount;
+    return `${y}-01-01`;
+  }
+
+  const d = new Date();
+  if (unit.startsWith('b')) {
+    d.setDate(d.getDate() - amount * 30);
+  } else if (unit.startsWith('m')) {
+    d.setDate(d.getDate() - amount * 7);
+  } else {
+    d.setDate(d.getDate() - amount);
+  }
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function PasienPage() {
   const { search, setSearch } = useListSearch();
   const [hasilTab, setHasilTab] = useState<string>('all');
@@ -384,11 +414,8 @@ export function PasienPage() {
 
   function handleUmurManualChange(value: string) {
     setUmurManual(value);
-    const years = parseInt(value, 10);
-    if (Number.isFinite(years) && years >= 0) {
-      const y = new Date().getFullYear() - years;
-      setTanggalLahir(`${y}-01-01`);
-    }
+    const tanggal = parseUmurManualToTanggalLahir(value);
+    if (tanggal) setTanggalLahir(tanggal);
   }
 
   function toggleJenis(id: string) {
@@ -937,12 +964,11 @@ export function PasienPage() {
           />
         </div>
         <div className="form-field">
-          <label htmlFor="umur-edit-manual">Umur (tahun)</label>
+          <label htmlFor="umur-edit-manual">Umur</label>
           <input
             id="umur-edit-manual"
-            type="number"
-            min="0"
-            step="1"
+            type="text"
+            placeholder="mis. 32 tahun / 6 bulan / 10 hari"
             value={umurManual}
             onChange={(e) => handleUmurManualChange(e.target.value)}
           />
@@ -1357,13 +1383,12 @@ export function PasienPage() {
               <input id="nama" required value={nama} onChange={(e) => setNama(e.target.value)} />
             </div>
             <div className="form-field" style={{ gridColumn: '3', gridRow: '1' }}>
-              <label htmlFor="umur-manual">Umur (tahun) *</label>
+              <label htmlFor="umur-manual">Umur *</label>
               <input
                 id="umur-manual"
-                type="number"
-                min="0"
-                step="1"
+                type="text"
                 required
+                placeholder="mis. 32 tahun / 6 bulan / 10 hari"
                 value={umurManual}
                 onChange={(e) => handleUmurManualChange(e.target.value)}
               />
