@@ -105,22 +105,22 @@ export function KalkulatorPage() {
         <h2 className="page-heading__title">Kalkulator</h2>
       </div>
 
-      <div style={{ maxWidth: '320px' }}>
+      <div style={{ maxWidth: '480px' }}>
         <div
           style={{
             background: '#0f172a',
             color: '#ffffff',
-            borderRadius: '12px 12px 0 0',
-            padding: '1.25rem 1rem',
+            borderRadius: '16px 16px 0 0',
+            padding: '2rem 1.5rem',
             textAlign: 'right',
           }}
         >
-          <div style={{ fontSize: '0.8rem', color: '#94a3b8', minHeight: '1.1rem' }}>
-            {storedValue !== null && pendingOp ? `${formatDisplay(storedValue)} ${pendingOp}` : ' '}
+          <div style={{ fontSize: '1.05rem', color: '#94a3b8', minHeight: '1.4rem' }}>
+            {storedValue !== null && pendingOp ? `${formatDisplay(storedValue)} ${pendingOp}` : ' '}
           </div>
           <div
             style={{
-              fontSize: '2.2rem',
+              fontSize: '3.4rem',
               fontWeight: 700,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -135,9 +135,9 @@ export function KalkulatorPage() {
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '2px',
+            gap: '3px',
             background: '#e2e8f0',
-            borderRadius: '0 0 12px 12px',
+            borderRadius: '0 0 16px 16px',
             overflow: 'hidden',
           }}
         >
@@ -155,8 +155,8 @@ export function KalkulatorPage() {
                   style={{
                     gridColumn: isZero ? 'span 2' : undefined,
                     border: 'none',
-                    padding: '1.1rem 0',
-                    fontSize: '1.15rem',
+                    padding: '1.7rem 0',
+                    fontSize: '1.7rem',
                     fontWeight: isOperator || isEquals ? 700 : 500,
                     cursor: 'pointer',
                     background: isEquals ? '#2563eb' : isOperator ? '#dbeafe' : isFunction ? '#f1f5f9' : '#ffffff',
