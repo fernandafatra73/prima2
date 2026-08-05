@@ -53,6 +53,7 @@ export function LaporanPajakPage({ modul = 'RADIOLOGI' }: LaporanPajakPageProps)
   const [editing, setEditing] = useState<BulanPajakItem | null>(null);
   const [editForm, setEditForm] = useState({ jumlahPasien: '0', harga: '0' });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [savingAll, setSavingAll] = useState(false);
   const [resettingBulan, setResettingBulan] = useState<number | null>(null);
   const [bulananJumlahPasien, setBulananJumlahPasien] = useState<Record<number, number>>({});
 
@@ -123,6 +124,30 @@ export function LaporanPajakPage({ modul = 'RADIOLOGI' }: LaporanPajakPageProps)
       setError(err instanceof Error ? err.message : 'Gagal menyimpan koreksi pajak');
     } finally {
       setSavingEdit(false);
+    }
+  }
+
+  async function handleSimpanSemua() {
+    if (!data || data.bulan.length === 0) return;
+    setSavingAll(true);
+    setError(null);
+    try {
+      await Promise.all(
+        data.bulan.map((b) =>
+          apiPatch('/api/laporan/pajak/override', {
+            year,
+            bulan: b.no,
+            modul,
+            jumlahPasien: b.jumlahPasien,
+            harga: b.harga,
+          }),
+        ),
+      );
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menyimpan laporan pajak');
+    } finally {
+      setSavingAll(false);
     }
   }
 
@@ -239,6 +264,15 @@ export function LaporanPajakPage({ modul = 'RADIOLOGI' }: LaporanPajakPageProps)
             <button
               type="button"
               className="btn btn--sm btn--primary"
+              onClick={() => void handleSimpanSemua()}
+              disabled={savingAll || !data || data.bulan.length === 0}
+              title="Simpan seluruh 12 bulan tahun ini sebagai data final (mengunci nilai yang sedang ditampilkan)"
+            >
+              💾 {savingAll ? 'Menyimpan...' : 'Simpan'}
+            </button>
+            <button
+              type="button"
+              className="btn btn--sm btn--secondary"
               onClick={() => void handleCetakPdf()}
               disabled={printingPdf || previewingPdf}
             >

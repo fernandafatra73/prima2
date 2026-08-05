@@ -149,8 +149,7 @@ export function LaporanNeracaPage({ modul = 'RADIOLOGI' }: LaporanNeracaPageProp
 
   const balanced = Math.abs(totals.totalAktiva - totals.totalPasiva) < 1;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function saveNeraca() {
     setSaving(true);
     setError(null);
     try {
@@ -176,6 +175,11 @@ export function LaporanNeracaPage({ modul = 'RADIOLOGI' }: LaporanNeracaPageProp
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await saveNeraca();
   }
 
   function buildReportData(): LaporanNeracaReportData {
@@ -330,6 +334,15 @@ export function LaporanNeracaPage({ modul = 'RADIOLOGI' }: LaporanNeracaPageProp
             <button
               type="button"
               className="btn btn--sm btn--primary"
+              onClick={() => void saveNeraca()}
+              disabled={saving}
+              title="Simpan laporan neraca tahun ini"
+            >
+              💾 {saving ? 'Menyimpan...' : 'Simpan'}
+            </button>
+            <button
+              type="button"
+              className="btn btn--sm btn--secondary"
               onClick={() => void handleCetakPdf()}
               disabled={printingPdf || previewingPdf}
             >

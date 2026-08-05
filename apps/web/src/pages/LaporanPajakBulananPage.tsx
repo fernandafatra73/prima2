@@ -86,6 +86,7 @@ export function LaporanPajakBulananPage({ modul = 'RADIOLOGI' }: LaporanPajakBul
   const [editing, setEditing] = useState<BulanPajakBulananItem | null>(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [saving, setSaving] = useState(false);
+  const [savingAll, setSavingAll] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -164,6 +165,49 @@ export function LaporanPajakBulananPage({ modul = 'RADIOLOGI' }: LaporanPajakBul
     }
   }
 
+  async function handleSimpanSemua() {
+    if (!data || data.bulan.length === 0) return;
+    setSavingAll(true);
+    setError(null);
+    try {
+      await Promise.all(
+        data.bulan.map((b) =>
+          apiPatch('/api/laporan/pajak-bulanan', {
+            year,
+            bulan: b.no,
+            modul,
+            harga: b.harga,
+            biayaSewaTempat: b.biayaSewaTempat,
+            biayaListrikAir: b.biayaListrikAir,
+            gajiFernanda: b.gajiFernanda,
+            gajiChalimatusadiah: b.gajiChalimatusadiah,
+            gajiRiki: b.gajiRiki,
+            gajiAgung: b.gajiAgung,
+            gajiKaryawan1: b.gajiKaryawan1,
+            gajiKaryawan2: b.gajiKaryawan2,
+            bahanRoentgen: b.bahanRoentgen,
+            peralatanRoentgen: b.peralatanRoentgen,
+            penyusutanManual: b.penyusutanManual,
+            perbaikanAlat: b.perbaikanAlat,
+            hargaPeralatan: b.hargaPeralatan,
+            tarifPenyusutanTahunanPersen: b.tarifPenyusutanTahunanPersen,
+            piutangUsaha: b.piutangUsaha,
+            perlengkapan: b.perlengkapan,
+            utangUsaha: b.utangUsaha,
+            modalAwalTahun: b.modalAwalTahun,
+            kasAwalTahun: b.kasAwalTahun,
+            akumulasiPenyusutanAwalTahun: b.akumulasiPenyusutanAwalTahun,
+          }),
+        ),
+      );
+      await fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menyimpan laporan pajak bulanan');
+    } finally {
+      setSavingAll(false);
+    }
+  }
+
   const editPendapatan = editing ? n(editForm.harga) * editing.jumlahPasien : 0;
   const editTotalBeban = editing
     ? n(editForm.biayaSewaTempat) + n(editForm.biayaListrikAir) +
@@ -215,6 +259,15 @@ export function LaporanPajakBulananPage({ modul = 'RADIOLOGI' }: LaporanPajakBul
                 ))}
               </select>
             </div>
+            <button
+              type="button"
+              className="btn btn--sm btn--primary"
+              onClick={() => void handleSimpanSemua()}
+              disabled={savingAll || !data || data.bulan.length === 0}
+              title="Simpan seluruh 12 bulan tahun ini sebagai data final (mengunci nilai yang sedang ditampilkan)"
+            >
+              💾 {savingAll ? 'Menyimpan...' : 'Simpan'}
+            </button>
           </div>
         }
       >
