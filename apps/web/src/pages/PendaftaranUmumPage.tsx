@@ -35,6 +35,7 @@ interface PendaftaranUmumItem {
   readonly dokterPengirim: string | null;
   readonly klinis: string | null;
   readonly admin: string | null;
+  readonly foto: string | null;
   readonly status: 'MENUNGGU' | 'SELESAI';
 }
 
@@ -136,7 +137,8 @@ export function PendaftaranUmumPage() {
     tanggalMasuk: '',
     dokterPengirim: '',
     klinis: '',
-    admin: ''
+    admin: '',
+    foto: ''
   });
 
   useEffect(() => {
@@ -153,7 +155,8 @@ export function PendaftaranUmumPage() {
       tanggalMasuk: new Date().toISOString().split('T')[0],
       dokterPengirim: '',
       klinis: '',
-      admin: ''
+      admin: '',
+      foto: ''
     });
     setCreateOpen(true);
     setError(null);
@@ -170,7 +173,8 @@ export function PendaftaranUmumPage() {
       tanggalMasuk: item.tanggalMasuk.split('T')[0],
       dokterPengirim: item.dokterPengirim || '',
       klinis: item.klinis || '',
-      admin: item.admin || ''
+      admin: item.admin || '',
+      foto: item.foto || ''
     });
     setError(null);
   }
@@ -178,6 +182,18 @@ export function PendaftaranUmumPage() {
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  }
+
+  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setFormData((prev) => ({ ...prev, foto: reader.result as string }));
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
 
@@ -196,6 +212,7 @@ export function PendaftaranUmumPage() {
         dokterPengirim: formData.dokterPengirim || undefined,
         klinis: formData.klinis || undefined,
         admin: formData.admin || undefined,
+        foto: formData.foto || undefined,
       });
       setCreateOpen(false);
       await reload();
@@ -222,6 +239,7 @@ export function PendaftaranUmumPage() {
         dokterPengirim: formData.dokterPengirim || undefined,
         klinis: formData.klinis || undefined,
         admin: formData.admin || undefined,
+        foto: formData.foto || undefined,
       });
       setEditing(null);
       await reload();
@@ -535,7 +553,8 @@ export function PendaftaranUmumPage() {
                 <span>📋</span> Data Identitas &amp; Registrasi Pasien
               </h4>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 420px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                 <div>
                   <label htmlFor="noRegistrasi" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
                     No. Registrasi (Otomatis)
@@ -674,7 +693,7 @@ export function PendaftaranUmumPage() {
                   />
                 </div>
 
-                <div>
+                <div style={{ gridColumn: '1 / -1' }}>
                   <label htmlFor="klinis" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
                     Klinis (Keterangan Medis / Keluhan Pasien)
                   </label>
@@ -695,6 +714,39 @@ export function PendaftaranUmumPage() {
                     }}
                   />
                 </div>
+              </div>
+
+              <div style={{ flexShrink: 0 }}>
+                <label htmlFor="pendaftaran-foto" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
+                  Foto Pasien
+                </label>
+                {formData.foto ? (
+                  <div className="pendaftaran-foto-box">
+                    <img src={formData.foto} alt="Foto pasien" />
+                    <button
+                      type="button"
+                      className="pendaftaran-foto-box__remove"
+                      onClick={() => setFormData((prev) => ({ ...prev, foto: '' }))}
+                      title="Hapus foto"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <label htmlFor="pendaftaran-foto" className="pendaftaran-foto-box pendaftaran-foto-box--empty">
+                    <span style={{ fontSize: '1.6rem' }}>📷</span>
+                    <span>Unggah foto</span>
+                    <span className="pendaftaran-foto-box__hint">10 × 12 cm</span>
+                  </label>
+                )}
+                <input
+                  id="pendaftaran-foto"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFotoChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
               </div>
             </div>
 

@@ -1537,6 +1537,59 @@
   padding: 0.9rem 1.1rem;
 }
 
+/* Pendaftaran Umum — kotak foto pasien ukuran fisik 10cm (lebar) x 12cm (tinggi), 96dpi: 1cm ≈ 37.8px. */
+.pendaftaran-foto-box {
+  position: relative;
+  width: 378px;
+  height: 454px;
+  max-width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #7dd3fc;
+}
+
+.pendaftaran-foto-box img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pendaftaran-foto-box--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  border: 2px dashed #7dd3fc;
+  background: #f0f9ff;
+  color: #0369a1;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.pendaftaran-foto-box__hint {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #0284c7;
+}
+
+.pendaftaran-foto-box__remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 /* Kalkulator — lebar & tombol menyesuaikan (clamp + aspect-ratio) supaya selalu pas di layar apa pun. */
 .kalkulator {
   width: clamp(280px, 90vw, 360px);
