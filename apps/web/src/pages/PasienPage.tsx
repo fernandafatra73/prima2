@@ -173,6 +173,11 @@ export function PasienPage() {
   const [quickEditKesan, setQuickEditKesan] = useState('');
   const [quickEditSaving, setQuickEditSaving] = useState(false);
   const [quickEditError, setQuickEditError] = useState<string | null>(null);
+  const [aiFotoOpen, setAiFotoOpen] = useState(false);
+  const [aiFotoDataUrl, setAiFotoDataUrl] = useState('');
+  const [aiFotoAnalyzing, setAiFotoAnalyzing] = useState(false);
+  const [aiFotoError, setAiFotoError] = useState<string | null>(null);
+  const [aiFotoResult, setAiFotoResult] = useState<{ namaPenyakit: string; kesan: string } | null>(null);
   const [nama, setNama] = useState('');
   const [tanggalLahir, setTanggalLahir] = useState('');
   const [umurManual, setUmurManual] = useState('');
@@ -469,6 +474,54 @@ export function PasienPage() {
     } finally {
       setQuickEditSaving(false);
     }
+  }
+
+  function openAiFotoModal() {
+    setAiFotoDataUrl('');
+    setAiFotoError(null);
+    setAiFotoResult(null);
+    setAiFotoOpen(true);
+  }
+
+  function handleAiFotoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setAiFotoDataUrl(reader.result);
+        setAiFotoError(null);
+        setAiFotoResult(null);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleAiFotoAnalyze() {
+    if (!aiFotoDataUrl) {
+      setAiFotoError('Unggah foto terlebih dahulu sebelum memulai analisa AI.');
+      return;
+    }
+    setAiFotoAnalyzing(true);
+    setAiFotoError(null);
+    try {
+      const res = await apiPost<{ namaPenyakit: string; kesan: string }>('/api/analisa-foto-ai/analyze', {
+        fotoDataUrl: aiFotoDataUrl,
+      });
+      setAiFotoResult(res);
+    } catch (err) {
+      setAiFotoError(err instanceof Error ? err.message : 'Gagal menganalisa foto dengan AI');
+    } finally {
+      setAiFotoAnalyzing(false);
+    }
+  }
+
+  function handleUseAiFotoResult() {
+    if (!aiFotoResult) return;
+    resetForm();
+    setKesan(aiFotoResult.kesan);
+    setAiFotoOpen(false);
+    setAddOpen(true);
   }
 
   async function handlePrint(id: string) {
@@ -1084,6 +1137,9 @@ export function PasienPage() {
         subtitle="Registrasi, status hasil, dan pembayaran pasien radiologi"
         action={
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button type="button" className="aifoto-analyze-btn" onClick={openAiFotoModal} style={{ padding: '0.5rem 0.9rem', fontSize: '0.8rem' }}>
+              ✨ AI Foto
+            </button>
             <button
               type="button"
               className={`btn btn--sm ${timeFilter === 'today' ? 'btn--primary' : 'btn--ghost'}`}
@@ -1462,6 +1518,71 @@ export function PasienPage() {
             loading={quickEditSaving}
           />
         </form>
+      </Modal>
+
+      <Modal open={aiFotoOpen} title="✨ AI Foto — Analisa & Isi Kesan Otomatis" onClose={() => setAiFotoOpen(false)} size="md">
+        <div className="form-grid">
+          {aiFotoError && <div className="alert alert--error form-grid--full">{aiFotoError}</div>}
+
+          <div className="form-field form-grid--full">
+            <label htmlFor="pasien-ai-foto">Foto</label>
+            {!aiFotoDataUrl ? (
+              <label htmlFor="pasien-ai-foto" className="aifoto-upload" style={{ cursor: 'pointer' }}>
+                <span className="aifoto-upload__icon">📤</span>
+                <strong>Klik untuk unggah foto</strong>
+                <p className="aifoto-upload__hint">JPEG, PNG, GIF, atau WEBP</p>
+              </label>
+            ) : (
+              <div className="aifoto-preview">
+                <img src={aiFotoDataUrl} alt="Preview foto" />
+              </div>
+            )}
+            <input
+              id="pasien-ai-foto"
+              type="file"
+              accept="image/*"
+              onChange={handleAiFotoFileChange}
+              style={aiFotoDataUrl ? { marginTop: '0.5rem' } : { display: 'none' }}
+            />
+          </div>
+
+          <div className="form-field form-grid--full">
+            <button
+              type="button"
+              className="aifoto-analyze-btn"
+              disabled={aiFotoAnalyzing || !aiFotoDataUrl}
+              onClick={() => void handleAiFotoAnalyze()}
+            >
+              {aiFotoAnalyzing ? '⏳ Menganalisa foto...' : '✨ Start — Analisa Foto dengan AI'}
+            </button>
+          </div>
+
+          {aiFotoResult && (
+            <div className="form-field form-grid--full aifoto-draft-banner">
+              <strong style={{ color: '#92400e' }}>⚠️ Draft AI — belum final.</strong>{' '}
+              <span style={{ color: '#78350f', fontSize: '0.85rem' }}>
+                Hasil di bawah WAJIB diperiksa ulang sebelum disimpan. Klik tombol di bawah untuk mengisi
+                kesan ini ke form Registrasi Pasien secara otomatis, lalu periksa/edit sebelum menyimpan.
+              </span>
+              {aiFotoResult.namaPenyakit && (
+                <p style={{ margin: '0.6rem 0 0', fontSize: '0.85rem', color: '#78350f' }}>
+                  <strong>Kemungkinan:</strong> {aiFotoResult.namaPenyakit}
+                </p>
+              )}
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: '#78350f', whiteSpace: 'pre-wrap' }}>
+                {aiFotoResult.kesan}
+              </p>
+              <button
+                type="button"
+                className="btn btn--primary"
+                style={{ marginTop: '0.75rem' }}
+                onClick={handleUseAiFotoResult}
+              >
+                Gunakan Kesan Ini &amp; Lanjut Registrasi
+              </button>
+            </div>
+          )}
+        </div>
       </Modal>
 
       <Modal
