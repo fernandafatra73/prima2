@@ -353,7 +353,7 @@ export function AiFotoPage() {
               </div>
             )}
 
-            <div className="form-field">
+            <div className="form-field form-field--full">
               <label htmlFor="ai-penyakit">Nama Penyakit</label>
               <input
                 id="ai-penyakit"
@@ -361,7 +361,7 @@ export function AiFotoPage() {
                 onChange={(e) => setForm((f) => ({ ...f, namaPenyakit: e.target.value }))}
               />
             </div>
-            <div className="form-field">
+            <div className="form-field form-field--full">
               <label htmlFor="ai-radiolog">Nama Radiolog/Dokter</label>
               <input
                 id="ai-radiolog"
