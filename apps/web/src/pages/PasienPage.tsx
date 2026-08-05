@@ -406,6 +406,7 @@ export function PasienPage() {
       setEditingId(p.id);
       setNama(p.nama);
       setTanggalLahir(p.tanggalLahir);
+      setUmurManual(String(p.umur));
       setNoTelepon(p.noTelepon ?? '');
       setAlamat(p.alamat ?? '');
       setPengirimId(p.pengirim.id);
@@ -936,10 +937,18 @@ export function PasienPage() {
           />
         </div>
         <div className="form-field">
-          <span className="form-field__static-label">Umur</span>
-          <p className="form-field__static-value">
-            {umurPreview === null ? '—' : formatUmurTahun(umurPreview)}
-          </p>
+          <label htmlFor="umur-edit-manual">Umur (tahun)</label>
+          <input
+            id="umur-edit-manual"
+            type="number"
+            min="0"
+            step="1"
+            value={umurManual}
+            onChange={(e) => handleUmurManualChange(e.target.value)}
+          />
+          <span className="form-hint">
+            {umurPreview === null ? 'Atau pilih tanggal lahir' : `≈ ${formatUmurTahun(umurPreview)}`}
+          </span>
         </div>
         <div className="form-field">
           <label htmlFor="telp">No telepon</label>
