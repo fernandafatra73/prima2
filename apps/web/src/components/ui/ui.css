@@ -1203,13 +1203,47 @@
 
 /* WindowFrame — tampilan ala jendela aplikasi Windows */
 .win-frame {
-  --win-titlebar-bg: #e2e8f0;
-  border: 1px solid #94a3b8;
+  --win-border: #94a3b8;
+  --win-bar-top: #f1f5f9;
+  --win-bar-bottom: #e2e8f0;
+  --win-bar-border: #cbd5e1;
+  --win-title-color: #334155;
+  --win-btn-color: #334155;
+  --win-btn-hover: rgba(100, 116, 139, 0.18);
+  --win-close-hover-bg: #e81123;
+  --win-close-hover-color: #ffffff;
+  border: 1px solid var(--win-border);
   border-radius: 6px;
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
   background: #ffffff;
   overflow: hidden;
   margin-bottom: 1.25rem;
+}
+
+/* Modul Radiologi */
+.win-frame--blue {
+  --win-border: #1d4ed8;
+  --win-bar-top: #3b82f6;
+  --win-bar-bottom: #1d4ed8;
+  --win-bar-border: #1e3a8a;
+  --win-title-color: #ffffff;
+  --win-btn-color: #ffffff;
+  --win-btn-hover: rgba(255, 255, 255, 0.22);
+  --win-close-hover-bg: #ffffff;
+  --win-close-hover-color: #1d4ed8;
+}
+
+/* Modul Laboratorium */
+.win-frame--red {
+  --win-border: #b91c1c;
+  --win-bar-top: #ef4444;
+  --win-bar-bottom: #b91c1c;
+  --win-bar-border: #7f1d1d;
+  --win-title-color: #ffffff;
+  --win-btn-color: #ffffff;
+  --win-btn-hover: rgba(255, 255, 255, 0.22);
+  --win-close-hover-bg: #ffffff;
+  --win-close-hover-color: #b91c1c;
 }
 
 .win-frame--maximized {
@@ -1233,8 +1267,8 @@
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.4rem 0.4rem 0.4rem 0.85rem;
-  background: linear-gradient(180deg, #f1f5f9, var(--win-titlebar-bg));
-  border-bottom: 1px solid #cbd5e1;
+  background: linear-gradient(180deg, var(--win-bar-top), var(--win-bar-bottom));
+  border-bottom: 1px solid var(--win-bar-border);
   cursor: default;
   user-select: none;
 }
@@ -1242,7 +1276,7 @@
 .win-frame__title {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #334155;
+  color: var(--win-title-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1263,18 +1297,18 @@
   height: 26px;
   border: none;
   background: transparent;
-  color: #334155;
+  color: var(--win-btn-color);
   cursor: pointer;
   border-radius: 3px;
 }
 
 .win-frame__btn:hover {
-  background: rgba(100, 116, 139, 0.18);
+  background: var(--win-btn-hover);
 }
 
 .win-frame__btn--close:hover {
-  background: #e81123;
-  color: #ffffff;
+  background: var(--win-close-hover-bg);
+  color: var(--win-close-hover-color);
 }
 
 .win-frame__btn:disabled {
@@ -1284,7 +1318,7 @@
 
 .win-frame__btn:disabled:hover {
   background: transparent;
-  color: #334155;
+  color: var(--win-btn-color);
 }
 
 .win-frame__body {

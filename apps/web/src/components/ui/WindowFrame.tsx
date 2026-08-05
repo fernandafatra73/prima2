@@ -1,23 +1,27 @@
 import { useState, type ReactNode } from 'react';
 import './ui.css';
 
+export type WindowFrameColor = 'default' | 'blue' | 'red';
+
 interface WindowFrameProps {
   readonly title: string;
   readonly children: ReactNode;
   readonly onClose?: () => void;
+  readonly color?: WindowFrameColor;
 }
 
 /**
  * Membungkus konten halaman dalam tampilan "jendela" ala aplikasi desktop
- * Windows: title bar + tombol minimize/maximize/close.
+ * Windows: title bar + tombol minimize/maximize/close. `color` mewarnai
+ * title bar (mis. biru untuk modul Radiologi, merah untuk Laboratorium).
  */
-export function WindowFrame({ title, children, onClose }: WindowFrameProps) {
+export function WindowFrame({ title, children, onClose, color = 'default' }: WindowFrameProps) {
   const [minimized, setMinimized] = useState(false);
   const [maximized, setMaximized] = useState(false);
 
   return (
     <div
-      className={`win-frame${maximized ? ' win-frame--maximized' : ''}`}
+      className={`win-frame win-frame--${color}${maximized ? ' win-frame--maximized' : ''}`}
       role="group"
       aria-label={`Jendela ${title}`}
     >
@@ -45,7 +49,7 @@ export function WindowFrame({ title, children, onClose }: WindowFrameProps) {
             {maximized ? (
               <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                 <rect x="1.5" y="0" width="7" height="7" fill="none" stroke="currentColor" strokeWidth="1.1" />
-                <rect x="0" y="2.5" width="7" height="7" fill="var(--win-titlebar-bg, #e2e8f0)" stroke="currentColor" strokeWidth="1.1" />
+                <rect x="0" y="2.5" width="7" height="7" fill="var(--win-bar-bottom, #e2e8f0)" stroke="currentColor" strokeWidth="1.1" />
               </svg>
             ) : (
               <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">

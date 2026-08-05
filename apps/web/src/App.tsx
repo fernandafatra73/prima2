@@ -2,7 +2,14 @@ import { ListRefreshProvider } from './context/ListRefreshContext.tsx';
 import { MusicPlayerProvider } from './context/MusicPlayerContext.tsx';
 import { AppShell } from './components/layout/AppShell.tsx';
 import { PdfPreviewHost } from './pdf/pdfPreviewHost.tsx';
-import { DASHBOARD_NAV_ID, getNavLabel, isViewAllowedForRole, type AppViewId } from './config/navigation.ts';
+import {
+  DASHBOARD_NAV_ID,
+  getNavLabel,
+  getViewFrameColor,
+  isViewAllowedForRole,
+  type AppViewId,
+} from './config/navigation.ts';
+import { WindowFrame } from './components/ui/WindowFrame.tsx';
 import { useAppNavigation } from './hooks/useAppNavigation.ts';
 import { clearStoredAuthUser, loadStoredAuthUser, storeAuthUser, type AuthUser } from './lib/auth.ts';
 import { DashboardPage } from './pages/DashboardPage.tsx';
@@ -89,7 +96,11 @@ function AccessDenied({ viewId }: { readonly viewId: AppViewId }) {
   );
 }
 
-function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (view: AppViewId) => void) {
+function renderViewContent(
+  viewId: AppViewId,
+  role: 'ADMIN' | 'KARYAWAN',
+  navigate: (view: AppViewId) => void,
+) {
   if (!isViewAllowedForRole(viewId, role)) {
     return <AccessDenied viewId={viewId} />;
   }
@@ -218,7 +229,7 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
     case 'logo-perusahaan':
       return <LogoPerusahaanPage />;
     case 'admin-pendaftaran':
-      return <AdminPendaftaranPage onNavigate={navigate} />;
+      return <AdminPendaftaranPage />;
     case 'ai-foto':
       return <AiFotoPage />;
     case 'anatomi-thorak':
@@ -246,6 +257,25 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
     default:
       return <DashboardPage />;
   }
+}
+
+function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (view: AppViewId) => void) {
+  const content = renderViewContent(viewId, role, navigate);
+
+  // Dashboard dan halaman "akses ditolak" tidak dibungkus jendela.
+  if (viewId === DASHBOARD_NAV_ID || !isViewAllowedForRole(viewId, role)) {
+    return content;
+  }
+
+  return (
+    <WindowFrame
+      title={getNavLabel(viewId)}
+      color={getViewFrameColor(viewId)}
+      onClose={() => navigate(DASHBOARD_NAV_ID)}
+    >
+      {content}
+    </WindowFrame>
+  );
 }
 
 export function App() {

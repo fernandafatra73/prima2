@@ -256,6 +256,22 @@ export function getNavLabel(id: AppViewId): string {
   return item?.label ?? id;
 }
 
+export type WindowFrameColor = 'default' | 'blue' | 'red';
+
+const RADIOLOGI_NAV_IDS: ReadonlySet<string> = new Set(
+  MAIN_NAV_CATEGORIES.find((c) => c.id === 'radiologi')?.items.map((item) => item.id) ?? [],
+);
+const LABORATORIUM_NAV_IDS: ReadonlySet<string> = new Set(
+  MAIN_NAV_CATEGORIES.find((c) => c.id === 'laboratorium')?.items.map((item) => item.id) ?? [],
+);
+
+/** Warna jendela (WindowFrame) berdasarkan modul: Radiologi biru, Laboratorium merah. */
+export function getViewFrameColor(id: AppViewId): WindowFrameColor {
+  if (RADIOLOGI_NAV_IDS.has(id)) return 'blue';
+  if (LABORATORIUM_NAV_IDS.has(id)) return 'red';
+  return 'default';
+}
+
 export type StaffRole = 'ADMIN' | 'KARYAWAN';
 
 /** Menu/halaman yang hanya boleh diakses role manajemen (ADMIN). */
