@@ -1458,6 +1458,50 @@
   border-radius: 8px;
 }
 
+.aifoto-preview--lg {
+  max-width: 520px;
+}
+
+.aifoto-preview--lg img {
+  max-height: 440px;
+}
+
+.aifoto-adjust {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-card);
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border);
+}
+
+.aifoto-adjust__row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr 2.25rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.aifoto-adjust__row label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.aifoto-adjust__row input[type='range'] {
+  width: 100%;
+  accent-color: var(--color-primary);
+}
+
+.aifoto-adjust__value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text-body);
+  text-align: right;
+}
+
 .aifoto-analyze-btn {
   display: inline-flex;
   align-items: center;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ConfirmModal } from '../components/ui/ConfirmModal.tsx';
 import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { Modal } from '../components/ui/Modal.tsx';
@@ -8,6 +8,7 @@ import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.t
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
 import { apiDelete, apiPatch, apiPost } from '../lib/api.ts';
+import { applyPhotoAdjustments } from '../lib/imageAdjust.ts';
 import '../components/ui/ui.css';
 
 interface AiFotoItem {
@@ -70,12 +71,41 @@ export function AiFotoPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
 
+  // Foto asli (belum dipengaruhi slider) — kontras/detail selalu dihitung ulang dari sini.
+  const [rawFotoDataUrl, setRawFotoDataUrl] = useState('');
+  const [contrast, setContrast] = useState(0);
+  const [detail, setDetail] = useState(0);
+  const [adjustingPhoto, setAdjustingPhoto] = useState(false);
+  const [fotoZoomOpen, setFotoZoomOpen] = useState(false);
+
+  useEffect(() => {
+    if (!rawFotoDataUrl) return;
+    let cancelled = false;
+    setAdjustingPhoto(true);
+    applyPhotoAdjustments(rawFotoDataUrl, { contrast, detail })
+      .then((result) => {
+        if (!cancelled) setForm((f) => ({ ...f, fotoDataUrl: result }));
+      })
+      .catch(() => {
+        if (!cancelled) setForm((f) => ({ ...f, fotoDataUrl: rawFotoDataUrl }));
+      })
+      .finally(() => {
+        if (!cancelled) setAdjustingPhoto(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [rawFotoDataUrl, contrast, detail]);
+
   function openCreate() {
     setForm(emptyForm);
     setIsDraftAi(false);
     setConfirmReviewed(false);
     setAnalyzeError(null);
     setError(null);
+    setRawFotoDataUrl('');
+    setContrast(0);
+    setDetail(0);
     setCreateOpen(true);
   }
 
@@ -92,6 +122,9 @@ export function AiFotoPage() {
     setConfirmReviewed(false);
     setAnalyzeError(null);
     setError(null);
+    setRawFotoDataUrl(item.fotoDataUrl);
+    setContrast(0);
+    setDetail(0);
     setEditing(item);
   }
 
@@ -106,6 +139,9 @@ export function AiFotoPage() {
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
+        setContrast(0);
+        setDetail(0);
+        setRawFotoDataUrl(reader.result);
         setForm((f) => ({ ...f, fotoDataUrl: reader.result as string }));
         setAnalyzeError(null);
       }
@@ -267,6 +303,63 @@ export function AiFotoPage() {
           size="lg"
         >
           <form onSubmit={(e) => void handleSubmit(e)} className="form-grid">
+            <div className="form-field form-field--full">
+              <label htmlFor="ai-foto">Foto *</label>
+              {!form.fotoDataUrl ? (
+                <label htmlFor="ai-foto" className="aifoto-upload" style={{ cursor: 'pointer' }}>
+                  <span className="aifoto-upload__icon">📤</span>
+                  <strong>Klik untuk unggah foto</strong>
+                  <p className="aifoto-upload__hint">JPEG, PNG, GIF, atau WEBP</p>
+                </label>
+              ) : (
+                <div className="aifoto-preview aifoto-preview--lg">
+                  <img
+                    src={form.fotoDataUrl}
+                    alt="Preview foto — klik untuk perbesar"
+                    onClick={() => setFotoZoomOpen(true)}
+                    style={{ cursor: 'zoom-in', opacity: adjustingPhoto ? 0.6 : 1 }}
+                  />
+                  {adjustingPhoto && <p className="aifoto-upload__hint">Memproses foto…</p>}
+                </div>
+              )}
+              <input
+                id="ai-foto"
+                type="file"
+                accept="image/*"
+                onChange={handleFotoFileChange}
+                style={form.fotoDataUrl ? { marginTop: '0.5rem' } : { display: 'none' }}
+              />
+
+              {form.fotoDataUrl && (
+                <div className="aifoto-adjust">
+                  <div className="aifoto-adjust__row">
+                    <label htmlFor="ai-kontras">Kontras</label>
+                    <input
+                      id="ai-kontras"
+                      type="range"
+                      min={-50}
+                      max={50}
+                      value={contrast}
+                      onChange={(e) => setContrast(Number(e.target.value))}
+                    />
+                    <span className="aifoto-adjust__value">{contrast}</span>
+                  </div>
+                  <div className="aifoto-adjust__row">
+                    <label htmlFor="ai-detail">Detail</label>
+                    <input
+                      id="ai-detail"
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={detail}
+                      onChange={(e) => setDetail(Number(e.target.value))}
+                    />
+                    <span className="aifoto-adjust__value">{detail}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="form-field">
               <label htmlFor="ai-nama">Nama Pasien *</label>
               <input
@@ -283,28 +376,6 @@ export function AiFotoPage() {
                 value={form.pemeriksaan}
                 onChange={(e) => setForm((f) => ({ ...f, pemeriksaan: e.target.value }))}
                 placeholder="Contoh: Foto luka tungkai kanan"
-              />
-            </div>
-
-            <div className="form-field form-field--full">
-              <label htmlFor="ai-foto">Foto *</label>
-              {!form.fotoDataUrl ? (
-                <label htmlFor="ai-foto" className="aifoto-upload" style={{ cursor: 'pointer' }}>
-                  <span className="aifoto-upload__icon">📤</span>
-                  <strong>Klik untuk unggah foto</strong>
-                  <p className="aifoto-upload__hint">JPEG, PNG, GIF, atau WEBP</p>
-                </label>
-              ) : (
-                <div className="aifoto-preview">
-                  <img src={form.fotoDataUrl} alt="Preview foto" />
-                </div>
-              )}
-              <input
-                id="ai-foto"
-                type="file"
-                accept="image/*"
-                onChange={handleFotoFileChange}
-                style={form.fotoDataUrl ? { marginTop: '0.5rem' } : { display: 'none' }}
               />
             </div>
 
@@ -387,6 +458,16 @@ export function AiFotoPage() {
           </form>
         </Modal>
       )}
+
+      <Modal open={fotoZoomOpen} title="Foto" onClose={() => setFotoZoomOpen(false)} size="xl">
+        {form.fotoDataUrl && (
+          <img
+            src={form.fotoDataUrl}
+            alt="Foto diperbesar"
+            style={{ width: '100%', display: 'block', borderRadius: '8px' }}
+          />
+        )}
+      </Modal>
 
       <ConfirmModal
         open={deleting !== null}
