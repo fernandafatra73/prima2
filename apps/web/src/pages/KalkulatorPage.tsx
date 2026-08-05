@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import '../components/ui/ui.css';
 
 type PendingOp = '+' | '-' | '×' | '÷' | null;
 
@@ -99,69 +100,39 @@ export function KalkulatorPage() {
     return handleDigit(label);
   }
 
+  // Angka panjang mengecilkan font secara bertahap alih-alih terpotong ellipsis.
+  const displayFontSize = display.length > 12 ? '1.6rem' : display.length > 9 ? '2.1rem' : display.length > 6 ? '2.7rem' : '3.4rem';
+
   return (
     <div>
       <div className="page-heading">
         <h2 className="page-heading__title">Kalkulator</h2>
       </div>
 
-      <div style={{ maxWidth: '480px' }}>
-        <div
-          style={{
-            background: '#0f172a',
-            color: '#ffffff',
-            borderRadius: '16px 16px 0 0',
-            padding: '2rem 1.5rem',
-            textAlign: 'right',
-          }}
-        >
-          <div style={{ fontSize: '1.05rem', color: '#94a3b8', minHeight: '1.4rem' }}>
+      <div className="kalkulator">
+        <div className="kalkulator__display">
+          <div className="kalkulator__display-sub">
             {storedValue !== null && pendingOp ? `${formatDisplay(storedValue)} ${pendingOp}` : ' '}
           </div>
-          <div
-            style={{
-              fontSize: '3.4rem',
-              fontWeight: 700,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
+          <div className="kalkulator__display-main" style={{ fontSize: displayFontSize }}>
             {display}
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '3px',
-            background: '#e2e8f0',
-            borderRadius: '0 0 16px 16px',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="kalkulator__grid">
           {BUTTON_ROWS.flatMap((row, rowIndex) =>
             row.map((label, colIndex) => {
               const isZero = label === '0';
               const isOperator = label === '+' || label === '-' || label === '×' || label === '÷';
               const isEquals = label === '=';
               const isFunction = label === 'C' || label === '⌫' || label === '%';
+              const variant = isEquals ? 'equals' : isOperator ? 'operator' : isFunction ? 'function' : 'digit';
               return (
                 <button
                   key={`${rowIndex}-${colIndex}-${label}`}
                   type="button"
                   onClick={() => handlePress(label)}
-                  style={{
-                    gridColumn: isZero ? 'span 2' : undefined,
-                    border: 'none',
-                    padding: '1.7rem 0',
-                    fontSize: '1.7rem',
-                    fontWeight: isOperator || isEquals ? 700 : 500,
-                    cursor: 'pointer',
-                    background: isEquals ? '#2563eb' : isOperator ? '#dbeafe' : isFunction ? '#f1f5f9' : '#ffffff',
-                    color: isEquals ? '#ffffff' : isOperator ? '#2563eb' : '#0f172a',
-                  }}
+                  className={`kalkulator__btn kalkulator__btn--${variant}${isZero ? ' kalkulator__btn--wide' : ''}`}
                 >
                   {label}
                 </button>

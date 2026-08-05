@@ -7,9 +7,6 @@ import '../components/ui/ui.css';
 // tanpa minta izin kamera ulang.
 let sharedCameraStreamPromise: Promise<MediaStream> | null = null;
 
-/** ~10 x 10 cm di layar (96dpi: 1cm ≈ 37.8px). */
-const MONITOR_SIZE_PX = 378;
-
 function pickMimeType(): string {
   const candidates = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
   for (const candidate of candidates) {
@@ -250,77 +247,31 @@ export function FatraPage() {
     recordingState === 'recording' ? '#ef4444' : recordingState === 'paused' ? '#f59e0b' : cameraReady ? '#22c55e' : '#94a3b8';
 
   return (
-    <div>
-      <div style={{ marginBottom: '1.25rem' }}>
-        <h2 style={{ margin: '0 0 0.25rem', color: '#0f172a' }}>📹 Fatra — CCTV Monitor</h2>
-        <p style={{ margin: 0, color: '#64748b', fontSize: '0.88rem' }}>
-          Live view kamera laptop ini pada monitor mini 10 × 10 cm. Rekaman otomatis terpotong &amp;
-          tersimpan (terunduh) tiap 5 menit selama merekam, dan segmen terakhir tersimpan saat Anda
-          menekan Stop.
-        </p>
+    <div className="fatra-page">
+      <div className="page-heading">
+        <div>
+          <h2 className="page-heading__title">📹 Fatra — CCTV Monitor</h2>
+          <p className="page-heading__subtitle">
+            Live view kamera laptop ini pada monitor mini 10 × 10 cm. Rekaman otomatis terpotong &amp;
+            tersimpan (terunduh) tiap 5 menit selama merekam, dan segmen terakhir tersimpan saat Anda
+            menekan Stop.
+          </p>
+        </div>
       </div>
 
-      {cameraError && (
-        <div
-          style={{
-            background: '#fee2e2',
-            color: '#dc2626',
-            padding: '0.75rem 1rem',
-            borderRadius: '8px',
-            marginBottom: '1rem',
-            fontWeight: 600,
-            maxWidth: `${MONITOR_SIZE_PX}px`,
-          }}
-        >
-          {cameraError}
-        </div>
-      )}
-
-      {recordingError && (
-        <div
-          style={{
-            background: '#fee2e2',
-            color: '#dc2626',
-            padding: '0.75rem 1rem',
-            borderRadius: '8px',
-            marginBottom: '1rem',
-            fontWeight: 600,
-            maxWidth: `${MONITOR_SIZE_PX}px`,
-          }}
-        >
-          {recordingError}
-        </div>
-      )}
+      {cameraError && <div className="fatra-alert">{cameraError}</div>}
+      {recordingError && <div className="fatra-alert">{recordingError}</div>}
 
       {/* Bezel monitor — bingkai ganda ala CCTV fisik, ukuran layar ~10x10cm */}
-      <div
-        style={{
-          width: `${MONITOR_SIZE_PX}px`,
-          maxWidth: '100%',
-          background: 'linear-gradient(145deg, #1e293b, #0f172a)',
-          borderRadius: '18px',
-          padding: '10px',
-          boxShadow: '0 12px 28px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
-        }}
-      >
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            aspectRatio: '1 / 1',
-            background: '#000',
-            borderRadius: '10px',
-            overflow: 'hidden',
-            border: '1px solid #334155',
-          }}
-        >
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
+      <div className={`fatra-monitor${recordingState === 'recording' ? ' fatra-monitor--recording' : ''}`}>
+        <div className="fatra-screen">
+          <video ref={videoRef} autoPlay muted playsInline className="fatra-screen__video" />
+
+          {cameraReady && <div className="fatra-scanline" />}
+          <span className="fatra-corner fatra-corner--tl" />
+          <span className="fatra-corner fatra-corner--tr" />
+          <span className="fatra-corner fatra-corner--bl" />
+          <span className="fatra-corner fatra-corner--br" />
 
           {!cameraReady && !cameraError && (
             <div
@@ -341,20 +292,7 @@ export function FatraPage() {
           )}
 
           {/* Status badge */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '10px',
-              left: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              background: 'rgba(15, 23, 42, 0.55)',
-              backdropFilter: 'blur(2px)',
-              padding: '0.25rem 0.55rem',
-              borderRadius: '999px',
-            }}
-          >
+          <div className="fatra-badge" style={{ top: '10px', left: '10px' }}>
             <span
               className={recordingState === 'recording' ? 'fatra-rec-dot' : undefined}
               style={{
@@ -372,18 +310,8 @@ export function FatraPage() {
 
           {/* Label kamera */}
           <div
-            style={{
-              position: 'absolute',
-              top: '10px',
-              right: '10px',
-              fontSize: '0.62rem',
-              fontWeight: 700,
-              color: '#e2e8f0',
-              background: 'rgba(15, 23, 42, 0.55)',
-              backdropFilter: 'blur(2px)',
-              padding: '0.2rem 0.5rem',
-              borderRadius: '999px',
-            }}
+            className="fatra-badge"
+            style={{ top: '10px', right: '10px', fontSize: '0.62rem', fontWeight: 700, color: '#e2e8f0' }}
           >
             CAM-01
           </div>
@@ -407,15 +335,8 @@ export function FatraPage() {
         </div>
 
         {/* Bar bawah bezel — dekorasi kecil ala monitor fisik */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '8px 4px 2px',
-          }}
-        >
-          <span style={{ fontSize: '0.6rem', color: '#64748b', letterSpacing: '0.06em' }}>FATRA MONITOR · 10×10cm</span>
+        <div className="fatra-footer-bar">
+          <span className="fatra-footer-bar__label">FATRA MONITOR · 10×10cm</span>
           <span
             style={{
               width: '6px',
@@ -427,47 +348,54 @@ export function FatraPage() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.6rem',
-          marginTop: '1rem',
-          flexWrap: 'wrap',
-        }}
-      >
+      <div className="fatra-toolbar">
         <button
           type="button"
-          className="btn btn--primary"
+          className="fatra-toolbar__btn fatra-toolbar__btn--start"
           onClick={handleStart}
           disabled={recordingState !== 'idle' || !cameraReady}
         >
           ⏺️ Start Rekaman
         </button>
-        <button type="button" className="btn btn--secondary" onClick={handlePauseResume} disabled={recordingState === 'idle'}>
+        <button
+          type="button"
+          className="fatra-toolbar__btn fatra-toolbar__btn--pause"
+          onClick={handlePauseResume}
+          disabled={recordingState === 'idle'}
+        >
           {recordingState === 'paused' ? '▶️ Lanjutkan' : '⏸️ Pause'}
         </button>
-        <button type="button" className="btn btn--secondary" onClick={handleStop} disabled={recordingState === 'idle'}>
+        <button
+          type="button"
+          className="fatra-toolbar__btn fatra-toolbar__btn--stop"
+          onClick={handleStop}
+          disabled={recordingState === 'idle'}
+        >
           ⏹️ Stop
         </button>
-        <button type="button" className="btn btn--secondary" onClick={handleSaveImage} disabled={!cameraReady}>
+        <span className="fatra-toolbar__divider" />
+        <button
+          type="button"
+          className="fatra-toolbar__btn fatra-toolbar__btn--snap"
+          onClick={handleSaveImage}
+          disabled={!cameraReady}
+        >
           📷 Simpan Gambar
         </button>
         <button
           type="button"
-          className="btn btn--ghost"
+          className="fatra-toolbar__btn fatra-toolbar__btn--refresh"
           onClick={handleRefresh}
           disabled={recordingState !== 'idle' || refreshing}
           title={recordingState !== 'idle' ? 'Stop rekaman dulu sebelum refresh' : 'Sambungkan ulang kamera'}
-          style={{ border: '1px solid var(--color-border)' }}
         >
           {refreshing ? '⏳ Menyambungkan…' : '🔄 Refresh'}
         </button>
-      </div>
 
-      <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#64748b' }}>
-        File tersimpan: {savedCount}
-        {lastSavedName && ` (terakhir: ${lastSavedName})`}.
+        <span className="fatra-status-pill">
+          💾 File tersimpan: <strong>{savedCount}</strong>
+          {lastSavedName && ` (terakhir: ${lastSavedName})`}
+        </span>
       </div>
     </div>
   );

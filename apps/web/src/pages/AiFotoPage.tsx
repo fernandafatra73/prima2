@@ -229,11 +229,7 @@ export function AiFotoPage() {
                 items.map((item) => (
                   <tr key={item.id}>
                     <td>
-                      <img
-                        src={item.fotoDataUrl}
-                        alt={`Foto ${item.namaPasien}`}
-                        style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--color-border)' }}
-                      />
+                      <img src={item.fotoDataUrl} alt={`Foto ${item.namaPasien}`} className="aifoto-thumb" />
                     </td>
                     <td>{formatTanggalDisplay(item.tanggal)}</td>
                     <td style={{ fontWeight: 600 }}>{item.namaPasien}</td>
@@ -241,19 +237,7 @@ export function AiFotoPage() {
                     <td>{item.namaPenyakit || '—'}</td>
                     <td style={{ maxWidth: '220px', whiteSpace: 'normal' }}>
                       {item.isDraftAi && (
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            fontSize: '0.68rem',
-                            fontWeight: 700,
-                            color: '#92400e',
-                            background: '#fef3c7',
-                            border: '1px solid #fcd34d',
-                            borderRadius: '999px',
-                            padding: '0.1rem 0.5rem',
-                            marginBottom: '0.3rem',
-                          }}
-                        >
+                        <span className="badge badge--warn" style={{ display: 'inline-block', marginBottom: '0.3rem' }}>
                           ⚠️ DRAFT AI — belum ditinjau
                         </span>
                       )}
@@ -304,20 +288,30 @@ export function AiFotoPage() {
 
             <div className="form-field form-field--full">
               <label htmlFor="ai-foto">Foto *</label>
-              <input id="ai-foto" type="file" accept="image/*" onChange={handleFotoFileChange} />
-              {form.fotoDataUrl && (
-                <img
-                  src={form.fotoDataUrl}
-                  alt="Preview foto"
-                  style={{ marginTop: '0.5rem', maxWidth: '240px', maxHeight: '240px', objectFit: 'contain', border: '1px solid var(--color-border)', borderRadius: '6px' }}
-                />
+              {!form.fotoDataUrl ? (
+                <label htmlFor="ai-foto" className="aifoto-upload" style={{ cursor: 'pointer' }}>
+                  <span className="aifoto-upload__icon">📤</span>
+                  <strong>Klik untuk unggah foto</strong>
+                  <p className="aifoto-upload__hint">JPEG, PNG, GIF, atau WEBP</p>
+                </label>
+              ) : (
+                <div className="aifoto-preview">
+                  <img src={form.fotoDataUrl} alt="Preview foto" />
+                </div>
               )}
+              <input
+                id="ai-foto"
+                type="file"
+                accept="image/*"
+                onChange={handleFotoFileChange}
+                style={form.fotoDataUrl ? { marginTop: '0.5rem' } : { display: 'none' }}
+              />
             </div>
 
             <div className="form-field form-field--full">
               <button
                 type="button"
-                className="btn btn--secondary"
+                className="aifoto-analyze-btn"
                 disabled={analyzing || !form.fotoDataUrl}
                 onClick={() => void handleStartAnalyze()}
               >
@@ -331,15 +325,7 @@ export function AiFotoPage() {
             </div>
 
             {isDraftAi && (
-              <div
-                className="form-field form-field--full"
-                style={{
-                  background: '#fffbeb',
-                  border: '1px solid #fcd34d',
-                  borderRadius: 'var(--radius-card)',
-                  padding: '0.75rem 1rem',
-                }}
-              >
+              <div className="form-field form-field--full aifoto-draft-banner">
                 <strong style={{ color: '#92400e' }}>⚠️ Draft AI — belum final.</strong>{' '}
                 <span style={{ color: '#78350f', fontSize: '0.85rem' }}>
                   Nama penyakit dan kesan di bawah dihasilkan otomatis oleh AI dan WAJIB diperiksa ulang oleh

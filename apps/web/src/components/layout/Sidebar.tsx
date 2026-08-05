@@ -242,6 +242,17 @@ export function Sidebar({ activeId, onNavigate, role }: SidebarProps) {
               <span className="app-sidebar__label">Kalkulator</span>
             </button>
           </li>
+
+          <li>
+            <button
+              type="button"
+              className={`app-sidebar__link${activeId === 'ai-gemini' ? ' app-sidebar__link--active' : ''}`}
+              onClick={() => onNavigate('ai-gemini')}
+            >
+              <IconClipboard className="app-sidebar__icon" />
+              <span className="app-sidebar__label">AI Gemini</span>
+            </button>
+          </li>
         </ul>
       </nav>
 

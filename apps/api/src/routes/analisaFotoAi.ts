@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenAI, Type } from '@google/genai';
 import { prisma } from '../lib/prisma.js';
 import { buildPaginationMeta, parsePagination } from '../lib/pagination.js';
 
@@ -20,23 +20,22 @@ function parseImageDataUrl(
   return { mediaType: mediaType as AllowedImageMediaType, data: data! };
 }
 
-const KESAN_JSON_SCHEMA = {
-  type: 'object',
+const KESAN_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
   properties: {
     namaPenyakit: {
-      type: 'string',
+      type: Type.STRING,
       description:
         'Kemungkinan nama penyakit/kondisi yang paling sesuai dengan temuan pada foto, dalam Bahasa Indonesia. Isi "Tidak dapat ditentukan" jika foto tidak cukup jelas/informatif.',
     },
     kesan: {
-      type: 'string',
+      type: Type.STRING,
       description:
         'Kesan (impression) naratif singkat berisi temuan yang tampak pada foto, dalam Bahasa Indonesia. Jika foto kurang jelas, sebutkan itu secara eksplisit alih-alih menebak.',
     },
   },
   required: ['namaPenyakit', 'kesan'],
-  additionalProperties: false,
-} as const;
+};
 
 const AI_FOTO_SYSTEM_PROMPT = `Anda adalah asisten AI yang membantu radiolog/dokter di sebuah klinik membaca foto medis (foto anatomi, luka, kondisi kulit, atau foto rontgen) untuk membuat DRAFT AWAL, bukan diagnosis final.
 
@@ -141,10 +140,10 @@ export async function registerAnalisaFotoAiRoutes(app: FastifyInstance): Promise
   app.post<{
     Body: { fotoDataUrl?: string; pemeriksaan?: string; namaPasien?: string };
   }>('/api/analisa-foto-ai/analyze', async (req, reply) => {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return reply.status(503).send({
-        error: 'Fitur analisa AI belum dikonfigurasi. Admin perlu mengatur ANTHROPIC_API_KEY di server.',
+        error: 'Fitur analisa AI belum dikonfigurasi. Admin perlu mengatur GEMINI_API_KEY di server.',
       });
     }
 
@@ -163,26 +162,15 @@ export async function registerAnalisaFotoAiRoutes(app: FastifyInstance): Promise
     ].filter((line): line is string => Boolean(line));
 
     try {
-      const client = new Anthropic({ apiKey });
-      const response = await client.messages.create({
-        model: 'claude-opus-5',
-        max_tokens: 4096,
-        system: AI_FOTO_SYSTEM_PROMPT,
-        thinking: { type: 'adaptive' },
-        output_config: {
-          effort: 'medium',
-          format: { type: 'json_schema', schema: KESAN_JSON_SCHEMA },
-        },
-        messages: [
+      const client = new GoogleGenAI({ apiKey });
+      const response = await client.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
           {
             role: 'user',
-            content: [
+            parts: [
+              { inlineData: { mimeType: parsedImage.mediaType, data: parsedImage.data } },
               {
-                type: 'image',
-                source: { type: 'base64', media_type: parsedImage.mediaType, data: parsedImage.data },
-              },
-              {
-                type: 'text',
                 text: [
                   ...contextLines,
                   'Analisa foto di atas dan berikan draft kemungkinan nama penyakit/kondisi serta kesan (impression) singkat sesuai skema JSON.',
@@ -191,22 +179,28 @@ export async function registerAnalisaFotoAiRoutes(app: FastifyInstance): Promise
             ],
           },
         ],
+        config: {
+          systemInstruction: AI_FOTO_SYSTEM_PROMPT,
+          responseMimeType: 'application/json',
+          responseSchema: KESAN_RESPONSE_SCHEMA,
+        },
       });
 
-      if (response.stop_reason === 'refusal') {
+      const finishReason = response.candidates?.[0]?.finishReason;
+      if (finishReason === 'SAFETY' || finishReason === 'PROHIBITED_CONTENT') {
         return reply.status(502).send({
           error: 'AI menolak menganalisa foto ini. Silakan isi nama penyakit & kesan secara manual.',
         });
       }
 
-      const textBlock = response.content.find((block) => block.type === 'text');
-      if (!textBlock || textBlock.type !== 'text') {
+      const text = response.text;
+      if (!text) {
         return reply.status(502).send({ error: 'AI tidak mengembalikan hasil analisa yang valid.' });
       }
 
       let parsed: { namaPenyakit?: unknown; kesan?: unknown };
       try {
-        parsed = JSON.parse(textBlock.text) as { namaPenyakit?: unknown; kesan?: unknown };
+        parsed = JSON.parse(text) as { namaPenyakit?: unknown; kesan?: unknown };
       } catch {
         return reply.status(502).send({ error: 'AI mengembalikan format hasil yang tidak valid.' });
       }
