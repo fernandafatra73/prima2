@@ -64,6 +64,14 @@ export function AiFotoPage() {
   const [deleting, setDeleting] = useState<AiFotoItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [copiedKesanId, setCopiedKesanId] = useState<string | null>(null);
+
+  function handleCopyKesan(item: AiFotoItem) {
+    if (!item.kesan) return;
+    void navigator.clipboard.writeText(item.kesan);
+    setCopiedKesanId(item.id);
+    setTimeout(() => setCopiedKesanId((c) => (c === item.id ? null : c)), 2000);
+  }
 
   // Apakah nama penyakit/kesan pada form saat ini berasal dari AI (belum ditinjau).
   const [isDraftAi, setIsDraftAi] = useState(false);
@@ -277,7 +285,20 @@ export function AiFotoPage() {
                           ⚠️ DRAFT AI — belum ditinjau
                         </span>
                       )}
-                      <div>{item.kesan || '—'}</div>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem' }}>
+                        <div style={{ flex: 1 }}>{item.kesan || '—'}</div>
+                        {item.kesan && (
+                          <button
+                            type="button"
+                            className="btn btn--ghost btn--xs"
+                            onClick={() => handleCopyKesan(item)}
+                            title="Salin kesan"
+                            style={{ flexShrink: 0 }}
+                          >
+                            {copiedKesanId === item.id ? '✅' : '📋'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <TableRowActions
