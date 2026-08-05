@@ -23,19 +23,6 @@ interface AiFotoItem {
   readonly tanggal: string;
 }
 
-function formatTanggalDisplay(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
-  } catch {
-    return dateStr;
-  }
-}
-
 const emptyForm = {
   namaPasien: '',
   pemeriksaan: '',
@@ -65,12 +52,17 @@ export function AiFotoPage() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [copiedKesanId, setCopiedKesanId] = useState<string | null>(null);
+  const [zoomedThumbId, setZoomedThumbId] = useState<string | null>(null);
 
   function handleCopyKesan(item: AiFotoItem) {
     if (!item.kesan) return;
     void navigator.clipboard.writeText(item.kesan);
     setCopiedKesanId(item.id);
     setTimeout(() => setCopiedKesanId((c) => (c === item.id ? null : c)), 2000);
+  }
+
+  function handleToggleThumbZoom(item: AiFotoItem) {
+    setZoomedThumbId((c) => (c === item.id ? null : item.id));
   }
 
   // Apakah nama penyakit/kesan pada form saat ini berasal dari AI (belum ditinjau).
@@ -253,11 +245,10 @@ export function AiFotoPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Tanggal</th>
                 <th>Nama Pasien</th>
                 <th>Pemeriksaan</th>
-                <th>Nama Penyakit</th>
                 <th>Foto</th>
+                <th>Nama Penyakit</th>
                 <th>Kesan</th>
                 <th>Aksi</th>
               </tr>
@@ -265,20 +256,25 @@ export function AiFotoPage() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '1.5rem' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '1.5rem' }}>
                     Belum ada data AI Foto.
                   </td>
                 </tr>
               ) : (
                 items.map((item) => (
                   <tr key={item.id}>
-                    <td>{formatTanggalDisplay(item.tanggal)}</td>
                     <td style={{ fontWeight: 600 }}>{item.namaPasien}</td>
                     <td>{item.pemeriksaan || '—'}</td>
-                    <td>{item.namaPenyakit || '—'}</td>
                     <td>
-                      <img src={item.fotoDataUrl} alt={`Foto ${item.namaPasien}`} className="aifoto-thumb" />
+                      <img
+                        src={item.fotoDataUrl}
+                        alt={`Foto ${item.namaPasien}`}
+                        className={`aifoto-thumb${zoomedThumbId === item.id ? ' aifoto-thumb--zoomed' : ''}`}
+                        onDoubleClick={() => handleToggleThumbZoom(item)}
+                        title="Klik 2 kali untuk perbesar/perkecil"
+                      />
                     </td>
+                    <td>{item.namaPenyakit || '—'}</td>
                     <td style={{ maxWidth: '220px', whiteSpace: 'normal' }}>
                       {item.isDraftAi && (
                         <span className="badge badge--warn" style={{ display: 'inline-block', marginBottom: '0.3rem' }}>
