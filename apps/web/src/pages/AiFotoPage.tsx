@@ -253,11 +253,11 @@ export function AiFotoPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Foto</th>
                 <th>Tanggal</th>
                 <th>Nama Pasien</th>
                 <th>Pemeriksaan</th>
                 <th>Nama Penyakit</th>
+                <th>Foto</th>
                 <th>Kesan</th>
                 <th>Aksi</th>
               </tr>
@@ -272,13 +272,13 @@ export function AiFotoPage() {
               ) : (
                 items.map((item) => (
                   <tr key={item.id}>
-                    <td>
-                      <img src={item.fotoDataUrl} alt={`Foto ${item.namaPasien}`} className="aifoto-thumb" />
-                    </td>
                     <td>{formatTanggalDisplay(item.tanggal)}</td>
                     <td style={{ fontWeight: 600 }}>{item.namaPasien}</td>
                     <td>{item.pemeriksaan || '—'}</td>
                     <td>{item.namaPenyakit || '—'}</td>
+                    <td>
+                      <img src={item.fotoDataUrl} alt={`Foto ${item.namaPasien}`} className="aifoto-thumb" />
+                    </td>
                     <td style={{ maxWidth: '220px', whiteSpace: 'normal' }}>
                       {item.isDraftAi && (
                         <span className="badge badge--warn" style={{ display: 'inline-block', marginBottom: '0.3rem' }}>
