@@ -164,7 +164,7 @@ export async function registerAnalisaFotoAiRoutes(app: FastifyInstance): Promise
     try {
       const client = new GoogleGenAI({ apiKey });
       const response = await client.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-flash-latest',
         contents: [
           {
             role: 'user',
