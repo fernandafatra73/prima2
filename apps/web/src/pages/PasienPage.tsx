@@ -177,7 +177,6 @@ export function PasienPage() {
   const [aiFotoDataUrl, setAiFotoDataUrl] = useState('');
   const [aiFotoAnalyzing, setAiFotoAnalyzing] = useState(false);
   const [aiFotoError, setAiFotoError] = useState<string | null>(null);
-  const [aiFotoResult, setAiFotoResult] = useState<{ namaPenyakit: string; kesan: string } | null>(null);
   const [nama, setNama] = useState('');
   const [tanggalLahir, setTanggalLahir] = useState('');
   const [umurManual, setUmurManual] = useState('');
@@ -479,7 +478,6 @@ export function PasienPage() {
   function openAiFotoModal() {
     setAiFotoDataUrl('');
     setAiFotoError(null);
-    setAiFotoResult(null);
     setAiFotoOpen(true);
   }
 
@@ -491,7 +489,6 @@ export function PasienPage() {
       if (typeof reader.result === 'string') {
         setAiFotoDataUrl(reader.result);
         setAiFotoError(null);
-        setAiFotoResult(null);
       }
     };
     reader.readAsDataURL(file);
@@ -508,20 +505,15 @@ export function PasienPage() {
       const res = await apiPost<{ namaPenyakit: string; kesan: string }>('/api/analisa-foto-ai/analyze', {
         fotoDataUrl: aiFotoDataUrl,
       });
-      setAiFotoResult(res);
+      resetForm();
+      setKesan(res.kesan);
+      setAiFotoOpen(false);
+      setAddOpen(true);
     } catch (err) {
       setAiFotoError(err instanceof Error ? err.message : 'Gagal menganalisa foto dengan AI');
     } finally {
       setAiFotoAnalyzing(false);
     }
-  }
-
-  function handleUseAiFotoResult() {
-    if (!aiFotoResult) return;
-    resetForm();
-    setKesan(aiFotoResult.kesan);
-    setAiFotoOpen(false);
-    setAddOpen(true);
   }
 
   async function handlePrint(id: string) {
@@ -1556,32 +1548,6 @@ export function PasienPage() {
               {aiFotoAnalyzing ? '⏳ Menganalisa foto...' : '✨ Start — Analisa Foto dengan AI'}
             </button>
           </div>
-
-          {aiFotoResult && (
-            <div className="form-field form-grid--full aifoto-draft-banner">
-              <strong style={{ color: '#92400e' }}>⚠️ Draft AI — belum final.</strong>{' '}
-              <span style={{ color: '#78350f', fontSize: '0.85rem' }}>
-                Hasil di bawah WAJIB diperiksa ulang sebelum disimpan. Klik tombol di bawah untuk mengisi
-                kesan ini ke form Registrasi Pasien secara otomatis, lalu periksa/edit sebelum menyimpan.
-              </span>
-              {aiFotoResult.namaPenyakit && (
-                <p style={{ margin: '0.6rem 0 0', fontSize: '0.85rem', color: '#78350f' }}>
-                  <strong>Kemungkinan:</strong> {aiFotoResult.namaPenyakit}
-                </p>
-              )}
-              <p style={{ margin: '0.35rem 0 0', fontSize: '0.85rem', color: '#78350f', whiteSpace: 'pre-wrap' }}>
-                {aiFotoResult.kesan}
-              </p>
-              <button
-                type="button"
-                className="btn btn--primary"
-                style={{ marginTop: '0.75rem' }}
-                onClick={handleUseAiFotoResult}
-              >
-                Gunakan Kesan Ini &amp; Lanjut Registrasi
-              </button>
-            </div>
-          )}
         </div>
       </Modal>
 
