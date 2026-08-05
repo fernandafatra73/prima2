@@ -1201,3 +1201,93 @@
   color: var(--color-primary);
 }
 
+/* WindowFrame — tampilan ala jendela aplikasi Windows */
+.win-frame {
+  --win-titlebar-bg: #e2e8f0;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.win-frame--maximized {
+  position: fixed;
+  inset: 0.75rem;
+  z-index: 900;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.35);
+}
+
+.win-frame--maximized .win-frame__body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.win-frame__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0.4rem 0.4rem 0.85rem;
+  background: linear-gradient(180deg, #f1f5f9, var(--win-titlebar-bg));
+  border-bottom: 1px solid #cbd5e1;
+  cursor: default;
+  user-select: none;
+}
+
+.win-frame__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.win-frame__controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.win-frame__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.win-frame__btn:hover {
+  background: rgba(100, 116, 139, 0.18);
+}
+
+.win-frame__btn--close:hover {
+  background: #e81123;
+  color: #ffffff;
+}
+
+.win-frame__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.win-frame__btn:disabled:hover {
+  background: transparent;
+  color: #334155;
+}
+
+.win-frame__body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+

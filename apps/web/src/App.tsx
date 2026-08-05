@@ -217,7 +217,7 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
     case 'logo-perusahaan':
       return <LogoPerusahaanPage />;
     case 'admin-pendaftaran':
-      return <AdminPendaftaranPage />;
+      return <AdminPendaftaranPage onNavigate={navigate} />;
     case 'anatomi-thorak':
       return <AnatomiPage regio="thorak" />;
     case 'anatomi-kepala':

@@ -4,10 +4,12 @@ import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { Modal } from '../components/ui/Modal.tsx';
 import { ModalFormFooter } from '../components/ui/ModalFormFooter.tsx';
 import { TableRowActions } from '../components/ui/TableRowActions.tsx';
+import { WindowFrame } from '../components/ui/WindowFrame.tsx';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
 import { apiDelete, apiPatch, apiPost } from '../lib/api.ts';
+import { DASHBOARD_NAV_ID, type AppViewId } from '../config/navigation.ts';
 import '../components/ui/ui.css';
 
 interface AdminPendaftaranItem {
@@ -23,7 +25,11 @@ function todayStr(): string {
   return new Date().toISOString().split('T')[0]!;
 }
 
-export function AdminPendaftaranPage() {
+interface AdminPendaftaranPageProps {
+  readonly onNavigate?: (view: AppViewId) => void;
+}
+
+export function AdminPendaftaranPage({ onNavigate }: AdminPendaftaranPageProps) {
   const { search, setSearch } = useListSearch();
   const queryParams = useListQueryParams({}, search);
   const { items, pagination, setPage, loading, error, setError, reload: reloadList } =
@@ -121,6 +127,10 @@ export function AdminPendaftaranPage() {
   }
 
   return (
+    <WindowFrame
+      title="Admin Pendaftaran"
+      onClose={onNavigate ? () => onNavigate(DASHBOARD_NAV_ID) : undefined}
+    >
     <ListPageShell
       title="Admin Pendaftaran"
       subtitle="Daftar petugas admin pendaftaran & presensi hari ini"
@@ -299,5 +309,6 @@ export function AdminPendaftaranPage() {
         />
       )}
     </ListPageShell>
+    </WindowFrame>
   );
 }
