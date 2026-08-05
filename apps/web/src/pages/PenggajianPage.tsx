@@ -138,6 +138,9 @@ export function PenggajianPage() {
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [printingSlipFor, setPrintingSlipFor] = useState<string | null>(null);
+  const [slipPreviewOpen, setSlipPreviewOpen] = useState(false);
+  const [slipPreviewBlob, setSlipPreviewBlob] = useState<Blob | null>(null);
+  const [slipPreviewFilename, setSlipPreviewFilename] = useState('Slip_Gaji.pdf');
 
   // Gabungkan semua karyawan (Radiologi + Laboratorium + Klinik) dengan data gaji
   // bulan terpilih (kalau sudah pernah diisi) — supaya setiap karyawan otomatis
@@ -329,12 +332,9 @@ export function PenggajianPage() {
         takeHomeTerbilang: terbilangRupiah(takeHome),
       };
       const blob = await pdf(<SlipGajiReportDocument data={data} />).toBlob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `Slip_Gaji_${row.namaKaryawan.replace(/[^a-zA-Z0-9]/g, '_')}_${bulanFilter}.pdf`;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      setSlipPreviewFilename(`Slip_Gaji_${row.namaKaryawan.replace(/[^a-zA-Z0-9]/g, '_')}_${bulanFilter}.pdf`);
+      setSlipPreviewBlob(blob);
+      setSlipPreviewOpen(true);
     } finally {
       setPrintingSlipFor(null);
     }
@@ -446,7 +446,7 @@ export function PenggajianPage() {
                             onPrint={() => void handleCetakSlip(row)}
                             editLabel="Ubah gaji"
                             deleteLabel="Hapus data gaji"
-                            printLabel={printingSlipFor === row.namaKaryawan ? 'Membuat slip...' : 'Cetak slip gaji perorangan'}
+                            printLabel={printingSlipFor === row.namaKaryawan ? 'Menyiapkan slip...' : 'Preview slip gaji perorangan'}
                           />
                         </td>
                       </>
@@ -594,6 +594,14 @@ export function PenggajianPage() {
         filename={`Penggajian_${bulanFilter}.pdf`}
         onClose={() => setPreviewModalOpen(false)}
         title="Pratinjau Penggajian"
+      />
+
+      <SharingPdfPreviewModal
+        open={slipPreviewOpen}
+        blob={slipPreviewBlob}
+        filename={slipPreviewFilename}
+        onClose={() => setSlipPreviewOpen(false)}
+        title="Pratinjau Slip Gaji"
       />
     </>
   );
