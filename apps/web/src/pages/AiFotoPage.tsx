@@ -345,7 +345,7 @@ export function AiFotoPage() {
                     <span className="aifoto-adjust__value">{contrast}</span>
                   </div>
                   <div className="aifoto-adjust__row">
-                    <label htmlFor="ai-detail">Detail</label>
+                    <label htmlFor="ai-detail">Ketajaman</label>
                     <input
                       id="ai-detail"
                       type="range"
@@ -376,6 +376,23 @@ export function AiFotoPage() {
                 value={form.pemeriksaan}
                 onChange={(e) => setForm((f) => ({ ...f, pemeriksaan: e.target.value }))}
                 placeholder="Contoh: Foto luka tungkai kanan"
+              />
+            </div>
+
+            <div className="form-field form-field--full">
+              <label htmlFor="ai-penyakit">Nama Penyakit</label>
+              <input
+                id="ai-penyakit"
+                value={form.namaPenyakit}
+                onChange={(e) => setForm((f) => ({ ...f, namaPenyakit: e.target.value }))}
+              />
+            </div>
+            <div className="form-field form-field--full">
+              <label htmlFor="ai-radiolog">Nama Radiolog/Dokter</label>
+              <input
+                id="ai-radiolog"
+                value={form.radiologNama}
+                onChange={(e) => setForm((f) => ({ ...f, radiologNama: e.target.value }))}
               />
             </div>
 
@@ -424,22 +441,6 @@ export function AiFotoPage() {
               </div>
             )}
 
-            <div className="form-field form-field--full">
-              <label htmlFor="ai-penyakit">Nama Penyakit</label>
-              <input
-                id="ai-penyakit"
-                value={form.namaPenyakit}
-                onChange={(e) => setForm((f) => ({ ...f, namaPenyakit: e.target.value }))}
-              />
-            </div>
-            <div className="form-field form-field--full">
-              <label htmlFor="ai-radiolog">Nama Radiolog/Dokter</label>
-              <input
-                id="ai-radiolog"
-                value={form.radiologNama}
-                onChange={(e) => setForm((f) => ({ ...f, radiologNama: e.target.value }))}
-              />
-            </div>
             <div className="form-field form-field--full">
               <label htmlFor="ai-kesan">Kesan</label>
               <textarea
