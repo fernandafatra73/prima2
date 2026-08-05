@@ -33,6 +33,7 @@ import { RadiograferPage } from './pages/RadiograferPage.tsx';
 import { KondisiAlatPage } from './pages/KondisiAlatPage.tsx';
 import { LogbookPasienPage } from './pages/LogbookPasienPage.tsx';
 import { GajiKaryawanPage } from './pages/GajiKaryawanPage.tsx';
+import { PenggajianPage } from './pages/PenggajianPage.tsx';
 import { KaryawanPage } from './pages/KaryawanPage.tsx';
 import { AdvantagePage } from './pages/AdvantagePage.tsx';
 import { BhpRadiologiPage } from './pages/BhpRadiologiPage.tsx';
@@ -204,6 +205,8 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
       return <AbsensiPage />;
     case 'keuangan-pembukuan':
       return <KeuanganPembukuanPage />;
+    case 'penggajian':
+      return <PenggajianPage />;
     case 'petugas-kasir':
       return <PetugasKasirPage />;
     case 'petugas-admin-klinik':

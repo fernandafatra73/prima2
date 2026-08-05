@@ -48,4 +48,10 @@ apps/api/generated/
 *.db-journal
 *.sqlite
 *.sqlite-journal
+!apps/desktop/resources/server/template.db
+
+# Desktop app build output & regenerated resources
+apps/desktop/dist/
+apps/desktop/resources/server/build/
+apps/desktop/resources/server/web-dist/
 

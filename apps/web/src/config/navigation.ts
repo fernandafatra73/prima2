@@ -71,9 +71,6 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
       { id: 'klasifikasi-paket', label: 'Klasifikasi Paket', shortLabel: 'Klasifikasi Paket' },
       { id: 'hitungan-led', label: 'Hitungan LED', shortLabel: 'Hitungan LED' },
       { id: 'karyawan-laboratorium', label: 'Daftar Karyawan', shortLabel: 'Daftar Karyawan' },
-      { id: 'laporan-pajak-lab', label: 'Laporan Pajak Tahun Lab', shortLabel: 'Laporan Pajak Tahun' },
-      { id: 'laporan-pajak-bulanan-lab', label: 'Laporan Pajak Bulanan Lab', shortLabel: 'Laporan Pajak Bulanan' },
-      { id: 'laporan-neraca', label: 'Laporan Neraca', shortLabel: 'Laporan Neraca' },
     ],
   },
   {
@@ -95,6 +92,7 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
     iconName: 'currency',
     items: [
       { id: 'keuangan-pembukuan', label: 'Sistem Keuangan & Pembukuan', shortLabel: 'Buku Kas & Keuangan' },
+      { id: 'penggajian', label: 'Penggajian', shortLabel: 'Penggajian' },
       { id: 'petugas-kasir', label: 'Petugas Kasir', shortLabel: 'Petugas Kasir' },
       { id: 'petugas-admin-klinik', label: 'Petugas Admin Klinik', shortLabel: 'Petugas Admin Klinik' },
       { id: 'logo-perusahaan', label: 'Logo Perusahaan', shortLabel: 'Logo Perusahaan' },
@@ -158,6 +156,7 @@ export const MAIN_NAV_ITEMS: readonly NavItem[] = [
   { id: 'farmasi-bhp', label: 'Manajemen Farmasi & BHP', shortLabel: 'Stok Obat & BHP' },
   { id: 'kwitansi-farmasi', label: 'Kwitansi Farmasi', shortLabel: 'Kwitansi Farmasi' },
   { id: 'keuangan-pembukuan', label: 'Sistem Keuangan & Pembukuan', shortLabel: 'Buku Kas & Keuangan' },
+  { id: 'penggajian', label: 'Penggajian', shortLabel: 'Penggajian' },
   { id: 'petugas-kasir', label: 'Petugas Kasir', shortLabel: 'Petugas Kasir' },
   { id: 'petugas-admin-klinik', label: 'Petugas Admin Klinik', shortLabel: 'Petugas Admin Klinik' },
   { id: 'logo-perusahaan', label: 'Logo Perusahaan', shortLabel: 'Logo Perusahaan' },
@@ -259,6 +258,7 @@ export type StaffRole = 'ADMIN' | 'KARYAWAN';
 /** Menu/halaman yang hanya boleh diakses role manajemen (ADMIN). */
 export const MANAGEMENT_ONLY_NAV_IDS: ReadonlySet<AppViewId> = new Set([
   'keuangan-pembukuan',
+  'penggajian',
   'sharing',
   'laporan-tahunan',
   'laporan-pajak',

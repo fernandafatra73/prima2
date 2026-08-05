@@ -1,0 +1,45 @@
+{
+  "name": "@labprima/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplikasi desktop Klinik Prima Husada (LabPrima)",
+  "author": "Klinik Prima Husada",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "prepare:resources": "node scripts/prepare-resources.mjs",
+    "dist:win": "npm run prepare:resources && electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "43.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.klinikprimahusada.desktop",
+    "productName": "Klinik Prima Husada",
+    "asar": true,
+    "npmRebuild": false,
+    "buildDependenciesFromSource": false,
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/server",
+        "to": "server",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "KlinikPrimaHusada-Setup.exe"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}
