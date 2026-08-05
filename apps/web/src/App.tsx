@@ -34,6 +34,7 @@ import { WhatsAppPage } from './pages/WhatsAppPage.tsx';
 import { TelegramPage } from './pages/TelegramPage.tsx';
 import { KalkulatorPage } from './pages/KalkulatorPage.tsx';
 import { AiGeminiPage } from './pages/AiGeminiPage.tsx';
+import { AiRadiologiPage } from './pages/AiRadiologiPage.tsx';
 import { AiFotoPage } from './pages/AiFotoPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { PasienPage } from './pages/PasienPage.tsx';
@@ -133,6 +134,8 @@ function renderViewContent(
       return <KalkulatorPage />;
     case 'ai-gemini':
       return <AiGeminiPage />;
+    case 'ai-radiologi':
+      return <AiRadiologiPage />;
     case 'harga-pemeriksaan-lab':
       return <HargaPemeriksaanLabPage />;
     case 'lab':
