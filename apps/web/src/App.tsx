@@ -26,6 +26,7 @@ import { KalenderPage } from './pages/KalenderPage.tsx';
 import { WhatsAppPage } from './pages/WhatsAppPage.tsx';
 import { TelegramPage } from './pages/TelegramPage.tsx';
 import { KalkulatorPage } from './pages/KalkulatorPage.tsx';
+import { AiFotoPage } from './pages/AiFotoPage.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { PasienPage } from './pages/PasienPage.tsx';
 import { PetugasLabPage } from './pages/PetugasLabPage.tsx';
@@ -218,6 +219,8 @@ function renderView(viewId: AppViewId, role: 'ADMIN' | 'KARYAWAN', navigate: (vi
       return <LogoPerusahaanPage />;
     case 'admin-pendaftaran':
       return <AdminPendaftaranPage onNavigate={navigate} />;
+    case 'ai-foto':
+      return <AiFotoPage />;
     case 'anatomi-thorak':
       return <AnatomiPage regio="thorak" />;
     case 'anatomi-kepala':

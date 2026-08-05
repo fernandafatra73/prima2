@@ -129,6 +129,7 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
     label: 'Anatomi',
     iconName: 'stethoscope',
     items: [
+      { id: 'ai-foto', label: 'AI Foto', shortLabel: 'AI Foto' },
       { id: 'anatomi-thorak', label: 'Thorak', shortLabel: 'Thorak' },
       { id: 'anatomi-kepala', label: 'Kepala', shortLabel: 'Kepala' },
       { id: 'anatomi-ossa-manus', label: 'Ossa Manus', shortLabel: 'Ossa Manus' },
@@ -206,6 +207,7 @@ export const MAIN_NAV_ITEMS: readonly NavItem[] = [
   { id: 'telegram', label: 'Telegram', shortLabel: 'Telegram' },
   { id: 'kalkulator', label: 'Kalkulator', shortLabel: 'Kalkulator' },
   { id: 'tanda-tangan-elektronik', label: 'Tanda Tangan Elektronik', shortLabel: 'Tanda Tangan Elektronik' },
+  { id: 'ai-foto', label: 'AI Foto', shortLabel: 'AI Foto' },
   { id: 'anatomi-thorak', label: 'Thorak', shortLabel: 'Thorak' },
   { id: 'anatomi-kepala', label: 'Kepala', shortLabel: 'Kepala' },
   { id: 'anatomi-ossa-manus', label: 'Ossa Manus', shortLabel: 'Ossa Manus' },
