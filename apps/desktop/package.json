@@ -36,7 +36,7 @@
       "target": [
         "portable"
       ],
-      "artifactName": "KlinikPrimaHusada-Setup.exe"
+      "artifactName": "aplikasi-ph-2026.exe"
     },
     "directories": {
       "output": "dist"
