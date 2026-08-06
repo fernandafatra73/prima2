@@ -207,7 +207,8 @@ const styles = StyleSheet.create({
   signatureWrap: {
     marginTop: 'auto',
     alignItems: 'flex-end',
-    paddingTop: 6,
+    // ~3 baris kosong (enter) di atas blok tanda tangan.
+    paddingTop: 48,
   },
   signature: {
     width: 200,

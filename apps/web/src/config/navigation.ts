@@ -126,7 +126,7 @@ export const MAIN_NAV_CATEGORIES: readonly NavCategory[] = [
   },
   {
     id: 'anatomi',
-    label: 'Anatomi',
+    label: 'Expertise Canggih',
     iconName: 'stethoscope',
     items: [
       { id: 'ai-foto', label: 'AI Foto', shortLabel: 'AI Foto' },

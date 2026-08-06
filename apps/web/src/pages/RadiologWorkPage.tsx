@@ -10,7 +10,7 @@ import { KesanRegioPicker } from '../components/KesanRegioPicker.tsx';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
-import { apiDelete, apiGet, apiPatch } from '../lib/api.ts';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api.ts';
 import { clampClinicalInput } from '../lib/clinicalText.ts';
 import type { PaginatedResponse } from '../lib/pagination.ts';
 import { printPasienReport } from '../lib/pasienPrint.ts';
@@ -155,6 +155,12 @@ export function RadiologWorkPage() {
   const [quickEditKesan, setQuickEditKesan] = useState('');
   const [quickEditSaving, setQuickEditSaving] = useState(false);
   const [quickEditError, setQuickEditError] = useState<string | null>(null);
+  const [aiFotoOpen, setAiFotoOpen] = useState(false);
+  const [aiFotoDataUrl, setAiFotoDataUrl] = useState('');
+  const [aiFotoAnalyzing, setAiFotoAnalyzing] = useState(false);
+  const [aiFotoError, setAiFotoError] = useState<string | null>(null);
+  const [aiFotoNamaPenyakit, setAiFotoNamaPenyakit] = useState('');
+  const [aiFotoKesan, setAiFotoKesan] = useState('');
 
   const loadTemplates = useCallback(async () => {
     try {
@@ -189,6 +195,58 @@ export function RadiologWorkPage() {
     } catch {
       setRadiologId('');
     }
+  }
+
+  function openAiFotoModal() {
+    setAiFotoDataUrl('');
+    setAiFotoError(null);
+    setAiFotoNamaPenyakit('');
+    setAiFotoKesan('');
+    setAiFotoOpen(true);
+  }
+
+  function handleAiFotoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setAiFotoDataUrl(reader.result);
+        setAiFotoError(null);
+        setAiFotoNamaPenyakit('');
+        setAiFotoKesan('');
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleAiFotoAnalyze() {
+    if (!aiFotoDataUrl) {
+      setAiFotoError('Unggah foto terlebih dahulu sebelum memulai analisa AI.');
+      return;
+    }
+    setAiFotoAnalyzing(true);
+    setAiFotoError(null);
+    try {
+      const res = await apiPost<{ namaPenyakit: string; kesan: string }>('/api/analisa-foto-ai/analyze', {
+        fotoDataUrl: aiFotoDataUrl,
+        namaPasien: selected?.nama || undefined,
+      });
+      setAiFotoNamaPenyakit(res.namaPenyakit);
+      setAiFotoKesan(res.kesan);
+    } catch (err) {
+      setAiFotoError(err instanceof Error ? err.message : 'Gagal menganalisa foto dengan AI');
+    } finally {
+      setAiFotoAnalyzing(false);
+    }
+  }
+
+  function handleUseAiFotoKesan() {
+    const combined = aiFotoNamaPenyakit.trim()
+      ? `Kemungkinan: ${aiFotoNamaPenyakit.trim()}\n\n${aiFotoKesan}`
+      : aiFotoKesan;
+    setKesan((prev) => clampClinicalInput(prev ? prev + '\n\n' + combined : combined));
+    setAiFotoOpen(false);
   }
 
   function openQuickEdit(item: AntreanItem) {
@@ -484,14 +542,24 @@ export function RadiologWorkPage() {
               <div className="form-field form-grid--full">
                 <div className="form-field__header">
                   <label htmlFor="kesan" style={{ margin: 0 }}>Kesan & saran</label>
-                  <button
-                    type="button"
-                    className="btn btn--xs btn--primary"
-                    onClick={() => setExpertiseModalOpen(true)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
-                  >
-                    <span>⚡</span> Expertise
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn--xs btn--primary"
+                      onClick={() => setExpertiseModalOpen(true)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                    >
+                      <span>⚡</span> Expertise
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--xs btn--ghost"
+                      onClick={openAiFotoModal}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', border: '1px solid var(--color-border)' }}
+                    >
+                      <span>✨</span> AI Foto
+                    </button>
+                  </div>
                 </div>
                 <textarea
                   id="kesan"
@@ -518,6 +586,72 @@ export function RadiologWorkPage() {
         templates={kesanTemplates}
         onTemplatesChanged={loadTemplates}
       />
+
+      <Modal open={aiFotoOpen} title="✨ AI Foto — Analisa & Isi Kesan Otomatis" onClose={() => setAiFotoOpen(false)} size="md">
+        <div className="form-grid">
+          {aiFotoError && <div className="alert alert--error form-grid--full">{aiFotoError}</div>}
+
+          <div className="form-field form-grid--full">
+            <label htmlFor="rw-ai-foto">Foto</label>
+            {!aiFotoDataUrl ? (
+              <label htmlFor="rw-ai-foto" className="aifoto-upload" style={{ cursor: 'pointer' }}>
+                <span className="aifoto-upload__icon">📤</span>
+                <strong>Klik untuk unggah foto</strong>
+                <p className="aifoto-upload__hint">JPEG, PNG, GIF, atau WEBP</p>
+              </label>
+            ) : (
+              <div className="aifoto-preview">
+                <img src={aiFotoDataUrl} alt="Preview foto" />
+              </div>
+            )}
+            <input
+              id="rw-ai-foto"
+              type="file"
+              accept="image/*"
+              onChange={handleAiFotoFileChange}
+              style={aiFotoDataUrl ? { marginTop: '0.5rem' } : { display: 'none' }}
+            />
+          </div>
+
+          <div className="form-field form-grid--full">
+            <button
+              type="button"
+              className="aifoto-analyze-btn"
+              disabled={aiFotoAnalyzing || !aiFotoDataUrl}
+              onClick={() => void handleAiFotoAnalyze()}
+            >
+              {aiFotoAnalyzing ? '⏳ Menganalisa foto...' : '✨ Start — Analisa Foto dengan AI'}
+            </button>
+          </div>
+
+          {(aiFotoNamaPenyakit || aiFotoKesan) && (
+            <>
+              <div className="form-field form-grid--full">
+                <label htmlFor="rw-ai-penyakit">Nama Penyakit</label>
+                <input
+                  id="rw-ai-penyakit"
+                  value={aiFotoNamaPenyakit}
+                  onChange={(e) => setAiFotoNamaPenyakit(e.target.value)}
+                />
+              </div>
+              <div className="form-field form-grid--full">
+                <label htmlFor="rw-ai-kesan">Kesan</label>
+                <textarea
+                  id="rw-ai-kesan"
+                  rows={4}
+                  value={aiFotoKesan}
+                  onChange={(e) => setAiFotoKesan(e.target.value)}
+                />
+              </div>
+              <div className="form-field form-grid--full">
+                <button type="button" className="btn btn--primary" onClick={handleUseAiFotoKesan}>
+                  Gunakan &amp; Masukkan ke Kesan
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
 
       <Modal
         open={quickEditItem !== null}
