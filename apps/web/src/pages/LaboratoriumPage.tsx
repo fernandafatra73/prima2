@@ -179,6 +179,7 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
   const [editUmurManual, setEditUmurManual] = useState('');
   const [editTanggalLahir, setEditTanggalLahir] = useState('');
   const [editPengirimId, setEditPengirimId] = useState('');
+  const [editAlamat, setEditAlamat] = useState('');
   const [saving, setSaving] = useState(false);
   const [printingId, setPrintingId] = useState<string | null>(null);
   const [logoSrc, setLogoSrc] = useState('');
@@ -288,6 +289,7 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
     setEditTanggalLahir(item.tanggalLahir);
     setEditUmurManual(String(item.umur));
     setEditPengirimId(item.pengirim.id);
+    setEditAlamat(item.alamat ?? '');
   }
 
   function handleEditUmurManualChange(value: string) {
@@ -364,6 +366,7 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
         jenisPemeriksaanIds: editPaketIds.length > 0 ? editPaketIds : undefined,
         tanggalLahir: editTanggalLahir || undefined,
         pengirimId: editPengirimId || undefined,
+        alamat: editAlamat,
       });
       setSelected(null);
       await reload();
@@ -1066,6 +1069,15 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+                  <label htmlFor="lab-edit-alamat">Alamat</label>
+                  <input
+                    id="lab-edit-alamat"
+                    type="text"
+                    value={editAlamat}
+                    onChange={(e) => setEditAlamat(e.target.value)}
+                  />
                 </div>
               </div>
 
