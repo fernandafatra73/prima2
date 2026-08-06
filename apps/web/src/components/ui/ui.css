@@ -1598,6 +1598,124 @@
   cursor: pointer;
 }
 
+/* Pendaftaran Umum — layout GroupBox klasik ala form desktop (No Registrasi, Nama, dst di kiri; foto di kanan). */
+.legacy-groupbox {
+  margin: 0;
+  padding: 1.5rem 1.5rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+}
+
+.legacy-groupbox > legend {
+  padding: 0 0.5rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-text-heading);
+}
+
+.legacy-form-layout {
+  display: flex;
+  gap: 1.75rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.legacy-form-fields {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.legacy-form-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.legacy-form-row > label {
+  font-size: 0.85rem;
+  color: var(--color-text-body);
+}
+
+.legacy-form-row > input,
+.legacy-form-row > select,
+.legacy-form-row > textarea {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-body);
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.legacy-form-row > textarea {
+  resize: vertical;
+  min-height: 2.4rem;
+}
+
+.legacy-photo-panel {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.legacy-button-rail {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 160px;
+}
+
+.legacy-button-rail > button {
+  width: 100%;
+}
+
+.legacy-photo-box {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg-page);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.legacy-photo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.legacy-photo-box__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.6);
+  color: #fff;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.legacy-photo-box__placeholder {
+  color: var(--color-text-muted);
+  font-size: 1.8rem;
+}
+
 /* Kalkulator — lebar & tombol menyesuaikan (clamp + aspect-ratio) supaya selalu pas di layar apa pun. */
 .kalkulator {
   width: clamp(280px, 90vw, 360px);

@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
 import { ConfirmModal } from '../components/ui/ConfirmModal.tsx';
 import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { Modal } from '../components/ui/Modal.tsx';
-import { ModalFormFooter } from '../components/ui/ModalFormFooter.tsx';
 import { TableRowActions } from '../components/ui/TableRowActions.tsx';
 import { useListRefresh } from '../context/ListRefreshContext.tsx';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
@@ -12,6 +11,7 @@ import { usePaginatedList } from '../hooks/usePaginatedList.ts';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api.ts';
 import type { PaginatedResponse } from '../lib/pagination.ts';
 import { PendaftaranReportDocument } from '../pdf/PendaftaranReportDocument.tsx';
+import { PendaftaranKopSuratDocument } from '../pdf/PendaftaranKopSuratDocument.tsx';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
 import { angkaKeKata } from '../lib/terbilang.ts';
 import '../components/ui/ui.css';
@@ -125,8 +125,10 @@ export function PendaftaranUmumPage() {
   const [editing, setEditing] = useState<PendaftaranUmumItem | null>(null);
   const [deleting, setDeleting] = useState<PendaftaranUmumItem | null>(null);
   const [previewItem, setPreviewItem] = useState<PendaftaranUmumItem | null>(null);
+  const [kopSuratPreviewItem, setKopSuratPreviewItem] = useState<PendaftaranUmumItem | null>(null);
   const [logoSrc, setLogoSrc] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const fotoInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     noRegistrasi: '',
@@ -501,6 +503,15 @@ export function PendaftaranUmumPage() {
                           🔊 Selesai
                         </button>
                       )}
+                      <button
+                        type="button"
+                        className="btn btn--xs btn--ghost"
+                        onClick={() => setKopSuratPreviewItem(item)}
+                        title="Cetak formulir dengan kop surat"
+                        style={{ border: '1px solid var(--color-border)' }}
+                      >
+                        📄 Formulir
+                      </button>
                       <TableRowActions
                         onEdit={() => openEdit(item)}
                         onDelete={() => setDeleting(item)}
@@ -527,319 +538,182 @@ export function PendaftaranUmumPage() {
           size="lg"
         >
           <form onSubmit={editing ? handleUpdate : handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {/* Section 1: Data Identitas & Registrasi (Biru Muda Card #f0f9ff) */}
-            <div
-              style={{
-                background: '#f0f9ff',
-                border: '1px solid #bae6fd',
-                borderRadius: '12px',
-                padding: '1.25rem',
-                boxShadow: '0 1px 2px rgba(2, 132, 199, 0.05)',
-              }}
-            >
-              <h4
-                style={{
-                  margin: '0 0 1rem',
-                  color: '#0369a1',
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  borderBottom: '1px solid #e0f2fe',
-                  paddingBottom: '0.5rem',
-                }}
-              >
-                <span>📋</span> Data Identitas &amp; Registrasi Pasien
-              </h4>
-
-              <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 420px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label htmlFor="noRegistrasi" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    No. Registrasi (Otomatis)
-                  </label>
-                  <input
-                    id="noRegistrasi"
-                    name="noRegistrasi"
-                    type="text"
-                    value={formData.noRegistrasi}
-                    onChange={handleChange}
-                    placeholder="Otomatis sistem"
-                    disabled={!!editing}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: editing ? '#e0f2fe' : '#ffffff',
-                      color: '#0f172a',
-                      fontWeight: 600,
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="tanggalMasuk" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Tanggal Masuk <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    id="tanggalMasuk"
-                    name="tanggalMasuk"
-                    type="date"
-                    required
-                    value={formData.tanggalMasuk}
-                    onChange={handleChange}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                      fontWeight: 600,
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="umur" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Umur Pasien
-                  </label>
-                  <input
-                    id="umur"
-                    name="umur"
-                    type="text"
-                    value={formData.umur}
-                    onChange={handleChange}
-                    placeholder="mis. 32 tahun / 24 bln"
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                    }}
-                  />
-                </div>
-
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label htmlFor="namaPasien" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Nama Lengkap Pasien <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    id="namaPasien"
-                    name="namaPasien"
-                    type="text"
-                    required
-                    value={formData.namaPasien}
-                    onChange={handleChange}
-                    placeholder="Masukkan nama lengkap pasien..."
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="telpon" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    No. Telepon / WhatsApp
-                  </label>
-                  <input
-                    id="telpon"
-                    name="telpon"
-                    type="text"
-                    value={formData.telpon}
-                    onChange={handleChange}
-                    placeholder="0812xxxx..."
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="alamat" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Alamat Lengkap Pasien
-                  </label>
-                  <textarea
-                    id="alamat"
-                    name="alamat"
-                    rows={2}
-                    value={formData.alamat}
-                    onChange={handleChange}
-                    placeholder="Nama jalan, RT/RW, kelurahan, kecamatan..."
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                    }}
-                  />
-                </div>
-
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label htmlFor="klinis" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Klinis (Keterangan Medis / Keluhan Pasien)
-                  </label>
-                  <textarea
-                    id="klinis"
-                    name="klinis"
-                    rows={2}
-                    value={formData.klinis}
-                    onChange={handleChange}
-                    placeholder="Keluhan utama, riwayat medis singkat, diagnosa sementara..."
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ flexShrink: 0 }}>
-                <label htmlFor="pendaftaran-foto" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                  Foto Pasien
-                </label>
-                {formData.foto ? (
-                  <div className="pendaftaran-foto-box">
-                    <img src={formData.foto} alt="Foto pasien" />
-                    <button
-                      type="button"
-                      className="pendaftaran-foto-box__remove"
-                      onClick={() => setFormData((prev) => ({ ...prev, foto: '' }))}
-                      title="Hapus foto"
-                    >
-                      ✕
-                    </button>
+            <fieldset className="legacy-groupbox">
+              <legend>Data Pendaftaran</legend>
+              <div className="legacy-form-layout">
+                <div className="legacy-form-fields">
+                  <div className="legacy-form-row">
+                    <label htmlFor="noRegistrasi">No Registrasi</label>
+                    <input
+                      id="noRegistrasi"
+                      name="noRegistrasi"
+                      type="text"
+                      value={formData.noRegistrasi}
+                      onChange={handleChange}
+                      placeholder="Otomatis sistem"
+                      disabled={!!editing}
+                    />
                   </div>
-                ) : (
-                  <label htmlFor="pendaftaran-foto" className="pendaftaran-foto-box pendaftaran-foto-box--empty">
-                    <span style={{ fontSize: '1.6rem' }}>📷</span>
-                    <span>Unggah foto</span>
-                    <span className="pendaftaran-foto-box__hint">10 × 12 cm</span>
-                  </label>
-                )}
-                <input
-                  id="pendaftaran-foto"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFotoChange}
-                  style={{ display: 'none' }}
-                />
-              </div>
-              </div>
-            </div>
 
-            {/* Section 2: Informasi Medis, Dokter & Admin (Biru Muda Card #f0f9ff) */}
-            <div
-              style={{
-                background: '#f0f9ff',
-                border: '1px solid #bae6fd',
-                borderRadius: '12px',
-                padding: '1.25rem',
-                boxShadow: '0 1px 2px rgba(2, 132, 199, 0.05)',
-              }}
-            >
-              <h4
-                style={{
-                  margin: '0 0 1rem',
-                  color: '#0369a1',
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  borderBottom: '1px solid #e0f2fe',
-                  paddingBottom: '0.5rem',
-                }}
+                  <div className="legacy-form-row">
+                    <label htmlFor="namaPasien">Nama Pasien</label>
+                    <input
+                      id="namaPasien"
+                      name="namaPasien"
+                      type="text"
+                      required
+                      value={formData.namaPasien}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="legacy-form-row">
+                    <label htmlFor="umur">Umur</label>
+                    <input
+                      id="umur"
+                      name="umur"
+                      type="text"
+                      value={formData.umur}
+                      onChange={handleChange}
+                      placeholder="mis. 32 tahun / 24 bln"
+                    />
+                  </div>
+
+                  <div className="legacy-form-row">
+                    <label htmlFor="telpon">Telpon</label>
+                    <input
+                      id="telpon"
+                      name="telpon"
+                      type="text"
+                      value={formData.telpon}
+                      onChange={handleChange}
+                      placeholder="0812xxxx..."
+                    />
+                  </div>
+
+                  <div className="legacy-form-row">
+                    <label htmlFor="alamat">Alamat</label>
+                    <input
+                      id="alamat"
+                      name="alamat"
+                      type="text"
+                      value={formData.alamat}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="legacy-form-row">
+                    <label htmlFor="tanggalMasuk">Tanggal Masuk</label>
+                    <input
+                      id="tanggalMasuk"
+                      name="tanggalMasuk"
+                      type="date"
+                      required
+                      value={formData.tanggalMasuk}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="legacy-form-row">
+                    <label htmlFor="dokterPengirim">Dokter Pengirim</label>
+                    <select
+                      id="dokterPengirim"
+                      name="dokterPengirim"
+                      value={formData.dokterPengirim}
+                      onChange={handleChange}
+                    >
+                      <option value="">-- Pilih Dokter --</option>
+                      {dokterList.map((d) => (
+                        <option key={d.id} value={d.nama}>
+                          {d.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="legacy-form-row">
+                    <label htmlFor="admin">Admin Pendaftaran</label>
+                    <select
+                      id="admin"
+                      name="admin"
+                      value={formData.admin}
+                      onChange={handleChange}
+                    >
+                      <option value="">-- Pilih Admin --</option>
+                      {adminList.map((a) => (
+                        <option key={a.id} value={a.nama}>
+                          {a.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="legacy-form-row">
+                    <label htmlFor="klinis">Klinis</label>
+                    <input
+                      id="klinis"
+                      name="klinis"
+                      type="text"
+                      value={formData.klinis}
+                      onChange={handleChange}
+                      placeholder="Keluhan / keterangan medis..."
+                    />
+                  </div>
+                </div>
+
+                <div className="legacy-photo-panel">
+                  {formData.foto ? (
+                    <div className="legacy-photo-box">
+                      <img src={formData.foto} alt="Foto pasien" />
+                      <button
+                        type="button"
+                        className="legacy-photo-box__remove"
+                        onClick={() => setFormData((prev) => ({ ...prev, foto: '' }))}
+                        title="Hapus foto"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="legacy-photo-box">
+                      <span className="legacy-photo-box__placeholder">📷</span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={() => fotoInputRef.current?.click()}
+                  >
+                    Ambil Foto
+                  </button>
+                  <input
+                    ref={fotoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFotoChange}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+              </div>
+            </fieldset>
+
+            <div className="form-actions form-actions--end form-grid--full">
+              <button type="submit" className="btn btn--primary" disabled={submitting}>
+                {submitting ? 'Menyimpan…' : 'Simpan'}
+              </button>
+              {editing && (
+                <button type="button" className="btn btn--ghost" onClick={() => setPreviewItem(editing)}>
+                  Cetak
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() => { setCreateOpen(false); setEditing(null); }}
               >
-                <span>🩺</span> Informasi Medis, Dokter &amp; Petugas
-              </h4>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label htmlFor="dokterPengirim" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Dokter Pemeriksa / Pengirim
-                  </label>
-                  <select
-                    id="dokterPengirim"
-                    name="dokterPengirim"
-                    value={formData.dokterPengirim}
-                    onChange={handleChange}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <option value="">-- Pilih Dokter --</option>
-                    {dokterList.map((d) => (
-                      <option key={d.id} value={d.nama}>
-                        {d.nama}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label htmlFor="admin" style={{ display: 'block', fontWeight: 600, color: '#0c4a6e', marginBottom: '0.35rem', fontSize: '0.85rem' }}>
-                    Admin Pendaftaran
-                  </label>
-                  <select
-                    id="admin"
-                    name="admin"
-                    value={formData.admin}
-                    onChange={handleChange}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #7dd3fc',
-                      background: '#ffffff',
-                      color: '#0f172a',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <option value="">-- Pilih Admin --</option>
-                    {adminList.map((a) => (
-                      <option key={a.id} value={a.nama}>
-                        {a.nama}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                Batal
+              </button>
             </div>
-
-            <ModalFormFooter
-              onCancel={() => { setCreateOpen(false); setEditing(null); }}
-              submitLabel={editing ? "Simpan Perubahan" : "Simpan Pendaftaran"}
-              loading={submitting}
-            />
           </form>
         </Modal>
       )}
@@ -876,6 +750,34 @@ export function PendaftaranUmumPage() {
                   dokterPengirim: previewItem.dokterPengirim || '',
                   klinis: previewItem.klinis || '',
                   admin: previewItem.admin || '',
+                  logoSrc,
+                }}
+              />
+            </PDFViewer>
+          </div>
+        </Modal>
+      )}
+
+      {kopSuratPreviewItem && (
+        <Modal
+          title={`Preview Formulir — ${kopSuratPreviewItem.noRegistrasi}`}
+          open={true}
+          onClose={() => setKopSuratPreviewItem(null)}
+          size="xl"
+        >
+          <div style={{ width: '100%', height: 'calc(100vh - 12rem)', minHeight: '600px' }}>
+            <PDFViewer width="100%" height="100%" className="pdf-viewer">
+              <PendaftaranKopSuratDocument
+                data={{
+                  noRegistrasi: kopSuratPreviewItem.noRegistrasi,
+                  namaPasien: kopSuratPreviewItem.namaPasien,
+                  umur: kopSuratPreviewItem.umur || '',
+                  alamat: kopSuratPreviewItem.alamat || '',
+                  telpon: kopSuratPreviewItem.telpon || '',
+                  tanggalMasuk: new Date(kopSuratPreviewItem.tanggalMasuk).toLocaleDateString('id-ID'),
+                  dokterPengirim: kopSuratPreviewItem.dokterPengirim || '',
+                  klinis: kopSuratPreviewItem.klinis || '',
+                  admin: kopSuratPreviewItem.admin || '',
                   logoSrc,
                 }}
               />

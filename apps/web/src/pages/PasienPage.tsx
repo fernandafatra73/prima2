@@ -1,22 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { PDFViewer } from '@react-pdf/renderer';
+import { CetakALModal, type CetakALPasien } from '../components/CetakALModal.tsx';
 import { ConfirmModal } from '../components/ui/ConfirmModal.tsx';
 import { Modal } from '../components/ui/Modal.tsx';
 import { ModalFormFooter } from '../components/ui/ModalFormFooter.tsx';
 import { ListPageShell } from '../components/ui/ListPageShell.tsx';
 import { TableRowActions } from '../components/ui/TableRowActions.tsx';
 import { KesanRegioPicker } from '../components/KesanRegioPicker.tsx';
+import { PendaftaranReportDocument } from '../pdf/PendaftaranReportDocument.tsx';
+import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
 import { parseKlinisData, serializeKlinisData } from '../lib/penunjang.ts';
 import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.ts';
 import { useListRefresh } from '../context/ListRefreshContext.tsx';
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../lib/api.ts';
-import { birthDateInputMax, birthDateInputMin, isValidBirthDate, normalizeBirthDateOnBlur } from '../lib/birthDate.ts';
+import { isValidBirthDate } from '../lib/birthDate.ts';
 import { clampClinicalInput } from '../lib/clinicalText.ts';
 import {
   computeAutoSharingAmount,
   computeUmurYears,
   formatRupiah,
+  formatUmurDetail,
   formatUmurTahun,
   parseUmurManualToTanggalLahir,
 } from '../lib/format.ts';
@@ -53,6 +58,7 @@ interface PendaftaranUmumItem {
   readonly klinis: string | null;
   readonly tanggalMasuk: string;
   readonly admin: string | null;
+  readonly foto: string | null;
 }
 
 interface Staff {
@@ -65,6 +71,7 @@ interface PasienRow {
   readonly regCode: string;
   readonly nama: string;
   readonly umur: number;
+  readonly tanggalLahir: string;
   readonly pengirim: { readonly id: string; readonly nama: string };
   readonly pemeriksaan: readonly { readonly nama: string }[];
   readonly totalHarga: string;
@@ -83,12 +90,13 @@ interface PemeriksaanItem {
 }
 
 interface PasienDetail extends PasienRow {
-  readonly tanggalLahir: string;
   readonly noTelepon: string | null;
   readonly alamat: string | null;
   readonly klinis: string | null;
   readonly kesan: string | null;
   readonly admin: string | null;
+  readonly foto: string | null;
+  readonly createdAt: string;
   readonly radiolog: { readonly id: string; readonly nama: string } | null;
   readonly sharingAmount: string;
   readonly sharingLocked: boolean;
@@ -189,6 +197,28 @@ export function PasienPage() {
   const [klinis, setKlinis] = useState('');
   const [kesan, setKesan] = useState('');
   const [admin, setAdmin] = useState('');
+  const [foto, setFoto] = useState('');
+  const [hargaManual, setHargaManual] = useState('0');
+  const [hargaMode, setHargaMode] = useState('custom');
+  const fotoInputRef = useRef<HTMLInputElement>(null);
+  const [savedPasien, setSavedPasien] = useState<CetakALPasien | null>(null);
+  const [cetakAL, setCetakAL] = useState<{ open: boolean; mode: 'amplop' | 'label' }>({
+    open: false,
+    mode: 'amplop',
+  });
+  const [pendaftaranEditing, setPendaftaranEditing] = useState<PendaftaranUmumItem | null>(null);
+  const [pendaftaranDeleting, setPendaftaranDeleting] = useState<PendaftaranUmumItem | null>(null);
+  const [pendaftaranPreview, setPendaftaranPreview] = useState<PendaftaranUmumItem | null>(null);
+  const [pendaftaranLogoSrc, setPendaftaranLogoSrc] = useState('');
+  const [pendaftaranSubmitting, setPendaftaranSubmitting] = useState(false);
+  const [pendaftaranForm, setPendaftaranForm] = useState({
+    namaPasien: '',
+    umur: '',
+    telpon: '',
+    alamat: '',
+    dokterPengirim: '',
+    admin: '',
+  });
   const [radiologId, setRadiologId] = useState('');
   const [hasilStatus, setHasilStatus] = useState<'MENUNGGU_HASIL' | 'SELESAI'>('MENUNGGU_HASIL');
   const [paymentStatus, setPaymentStatus] = useState<'BELUM_LUNAS' | 'LUNAS'>('BELUM_LUNAS');
@@ -285,6 +315,60 @@ export function PasienPage() {
     void loadMasters();
   }, [loadMasters, listRefreshVersion]);
 
+  useEffect(() => {
+    void loadLogoDataUrl().then(setPendaftaranLogoSrc).catch(() => setPendaftaranLogoSrc(''));
+  }, []);
+
+  function openEditPendaftaran(item: PendaftaranUmumItem) {
+    setPendaftaranEditing(item);
+    setPendaftaranForm({
+      namaPasien: item.namaPasien,
+      umur: item.umur || '',
+      telpon: item.telpon || '',
+      alamat: item.alamat || '',
+      dokterPengirim: item.dokterPengirim || '',
+      admin: item.admin || '',
+    });
+  }
+
+  async function submitEditPendaftaran(e: FormEvent) {
+    e.preventDefault();
+    if (!pendaftaranEditing) return;
+    setPendaftaranSubmitting(true);
+    setError(null);
+    try {
+      await apiPatch(`/api/pendaftaran-umum/${pendaftaranEditing.id}`, {
+        namaPasien: pendaftaranForm.namaPasien,
+        umur: pendaftaranForm.umur || undefined,
+        telpon: pendaftaranForm.telpon || undefined,
+        alamat: pendaftaranForm.alamat || undefined,
+        dokterPengirim: pendaftaranForm.dokterPengirim || undefined,
+        admin: pendaftaranForm.admin || undefined,
+      });
+      setPendaftaranEditing(null);
+      await loadMasters();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal mengubah data pendaftaran');
+    } finally {
+      setPendaftaranSubmitting(false);
+    }
+  }
+
+  async function confirmDeletePendaftaran() {
+    if (!pendaftaranDeleting) return;
+    setPendaftaranSubmitting(true);
+    setError(null);
+    try {
+      await apiDelete(`/api/pendaftaran-umum/${pendaftaranDeleting.id}`);
+      setPendaftaranDeleting(null);
+      await loadMasters();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal menghapus data pendaftaran');
+    } finally {
+      setPendaftaranSubmitting(false);
+    }
+  }
+
   const loadSummary = useCallback(async () => {
     try {
       const res = await apiGet<PasienSummary>('/api/pasien/summary');
@@ -322,6 +406,7 @@ export function PasienPage() {
       setSharingAmount('0');
       setSharingMode('auto');
       setAdmin('');
+      setFoto('');
       return;
     }
 
@@ -330,18 +415,12 @@ export function PasienPage() {
     setNoTelepon(p.telpon || '');
     setKlinis(p.klinis || '');
     setAdmin(p.admin || '');
+    setFoto(p.foto || '');
 
     if (p.umur) {
-      const match = p.umur.match(/(\d+)/);
-      if (match) {
-        const years = parseInt(match[1], 10);
-        const y = new Date().getFullYear() - years;
-        setTanggalLahir(`${y}-01-01`);
-        setUmurManual(String(years));
-      } else {
-        setTanggalLahir('');
-        setUmurManual('');
-      }
+      const tanggal = parseUmurManualToTanggalLahir(p.umur);
+      setUmurManual(p.umur);
+      setTanggalLahir(tanggal ?? '');
     } else {
       setTanggalLahir('');
       setUmurManual('');
@@ -368,19 +447,35 @@ export function PasienPage() {
     setUmurManual('');
     setNoTelepon('');
     setAlamat('');
-    setPengirimId('');
+    setPengirimId(dokter[0]?.id ?? '');
+    setSharingAmount(dokter[0]?.defaultSharingAmount ?? '0');
+    setSharingMode('auto');
     setKlinis('');
     setKesan('');
     setAdmin('');
+    setFoto('');
+    setHargaManual('0');
+    setHargaMode('custom');
     setRadiologId('');
     setHasilStatus('MENUNGGU_HASIL');
     setPaymentStatus('BELUM_LUNAS');
     setSelectedJenis([]);
     existingTambahanRef.current = { radTambahan: [], labTambahan: [] };
-    setSharingAmount('0');
-    setSharingMode('auto');
     setEditingId(null);
     setSelectedPendaftaranId('');
+    setSavedPasien(null);
+  }
+
+  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setFoto(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   function handleUmurManualChange(value: string) {
@@ -415,6 +510,7 @@ export function PasienPage() {
       };
       setKesan(p.kesan ?? '');
       setAdmin(p.admin ?? '');
+      setFoto(p.foto ?? '');
       setRadiologId(p.radiolog?.id ?? '');
       setHasilStatus(p.hasilStatus);
       setPaymentStatus(p.paymentStatus);
@@ -548,14 +644,10 @@ export function PasienPage() {
       setError('Tanggal lahir tidak valid');
       return;
     }
-    if (selectedJenis.length === 0) {
-      setError('Pilih minimal satu jenis pemeriksaan');
-      return;
-    }
     setSaving(true);
     setError(null);
     try {
-      await apiPost('/api/pasien', {
+      const res = await apiPost<{ item: CetakALPasien }>('/api/pasien', {
         nama,
         tanggalLahir,
         noTelepon,
@@ -564,11 +656,12 @@ export function PasienPage() {
         klinis: serializeKlinisData(klinis, [], []),
         jenisPemeriksaanIds: selectedJenis,
         sharingAmount: Number(sharingAmount),
+        harga: Number(hargaManual) || 0,
         radiologId: radiologId || undefined,
         admin: admin || undefined,
+        foto: foto || undefined,
       });
-      setAddOpen(false);
-      resetForm();
+      setSavedPasien(res.item);
       await reload({ resetPage: true });
       await loadSummary();
     } catch (err: unknown) {
@@ -610,6 +703,7 @@ export function PasienPage() {
         kesan,
         admin: admin || undefined,
         radiologId: radiologId || null,
+        foto: foto || undefined,
       });
       setEditOpen(false);
       resetForm();
@@ -922,19 +1016,6 @@ export function PasienPage() {
           <input id="nama" required value={nama} onChange={(e) => setNama(e.target.value)} />
         </div>
         <div className="form-field">
-          <label htmlFor="tgl">Tanggal lahir</label>
-          <input
-            id="tgl"
-            type="date"
-            required
-            min={birthDateInputMin()}
-            max={birthDateInputMax()}
-            value={tanggalLahir}
-            onChange={(e) => setTanggalLahir(e.target.value)}
-            onBlur={(e) => setTanggalLahir(normalizeBirthDateOnBlur(e.target.value))}
-          />
-        </div>
-        <div className="form-field">
           <label htmlFor="umur-edit-manual">Umur</label>
           <input
             id="umur-edit-manual"
@@ -1106,6 +1187,41 @@ export function PasienPage() {
     </div>
   );
 
+  const fotoField = (
+    <div className="form-field">
+      <label>Foto Pasien</label>
+      <div className="legacy-photo-panel" style={{ alignItems: 'flex-start' }}>
+        {foto ? (
+          <div className="legacy-photo-box" style={{ width: '160px', height: '160px' }}>
+            <img src={foto} alt="Foto pasien" />
+            <button
+              type="button"
+              className="legacy-photo-box__remove"
+              onClick={() => setFoto('')}
+              title="Hapus foto"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <div className="legacy-photo-box" style={{ width: '160px', height: '160px' }}>
+            <span className="legacy-photo-box__placeholder">📷</span>
+          </div>
+        )}
+        <button type="button" className="btn btn--ghost" onClick={() => fotoInputRef.current?.click()}>
+          Ambil Foto
+        </button>
+        <input
+          ref={fotoInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFotoChange}
+          style={{ display: 'none' }}
+        />
+      </div>
+    </div>
+  );
+
   const displayError = error ?? mastersError;
 
   const metrics = summary
@@ -1191,7 +1307,7 @@ export function PasienPage() {
                 setAddOpen(true);
               }}
             >
-              + Registrasi Pasien
+              + Registrasi Radiologi
             </button>
           </div>
         }
@@ -1255,7 +1371,7 @@ export function PasienPage() {
                 <tr key={p.id}>
                   <td>{p.regCode}</td>
                   <td>{p.nama}</td>
-                  <td>{formatUmurTahun(p.umur)}</td>
+                  <td>{formatUmurDetail(p.tanggalLahir)}</td>
                   <td>{p.pengirim.nama}</td>
                   <td>
                     <div>{p.pemeriksaan.map((x) => x.nama).join(', ')}</div>
@@ -1324,146 +1440,395 @@ export function PasienPage() {
         </table>
       </ListPageShell>
 
-      <Modal open={addOpen} title="Registrasi Pasien Baru" onClose={() => setAddOpen(false)} size="xl">
-        <form onSubmit={(e) => void onSubmitAdd(e)} className="form-grid form-grid--wide">
-          <div
-            className="form-grid--span-3"
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.75rem 1.25rem', marginBottom: '0.5rem' }}
-          >
-            <div
-              className="form-field"
-              style={{ gridColumn: '1', gridRow: '1', background: '#f0f9ff', padding: '1rem', borderRadius: '8px', border: '1px solid #bae6fd' }}
-            >
-              <label htmlFor="ambil-reg" style={{ color: '#0369a1', fontWeight: 600 }}>Ambil Data dari Pendaftaran Umum (Opsional)</label>
-              <select
-                id="ambil-reg"
-                value={selectedPendaftaranId}
-                onChange={(e) => handlePendaftaranSelect(e.target.value)}
-                style={{ borderColor: '#7dd3fc', backgroundColor: 'white' }}
-              >
-                <option value="">-- Pilih Data Pasien --</option>
-                {pendaftaranList.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.noRegistrasi} - {p.namaPasien} ({p.umur || '-'})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-field" style={{ gridColumn: '2', gridRow: '1' }}>
-              <label htmlFor="nama">Nama *</label>
-              <input id="nama" required value={nama} onChange={(e) => setNama(e.target.value)} />
-            </div>
-            <div className="form-field" style={{ gridColumn: '3', gridRow: '1' }}>
-              <label htmlFor="umur-manual">Umur *</label>
-              <input
-                id="umur-manual"
-                type="text"
-                required
-                placeholder="mis. 32 tahun / 6 bulan / 10 hari"
-                value={umurManual}
-                onChange={(e) => handleUmurManualChange(e.target.value)}
-              />
-            </div>
-            <div className="form-field" style={{ gridColumn: '1', gridRow: '2' }}>
-              <label htmlFor="pengirim">Dokter pengirim *</label>
-              <select
-                id="pengirim"
-                required
-                value={pengirimId}
-                onChange={(e) => onPengirimChange(e.target.value, true)}
-              >
-                <option value="">Pilih dokter</option>
-                {dokter.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-field" style={{ gridColumn: '2', gridRow: '2' }}>
-              <label htmlFor="radiolog">Radiolog</label>
-              <select id="radiolog" value={radiologId} onChange={(e) => setRadiologId(e.target.value)}>
-                <option value="">Pilih radiolog</option>
-                {radiologList.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-field" style={{ gridColumn: '3', gridRow: '2' }}>
-              <label htmlFor="admin">Admin Pendaftaran</label>
-              <select id="admin" value={admin} onChange={(e) => setAdmin(e.target.value)}>
-                <option value="">Pilih admin</option>
-                {staffList.map((s) => (
-                  <option key={s.id} value={s.nama}>
-                    {s.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-field" style={{ gridColumn: '4', gridRow: '1' }}>
-              <label htmlFor="sharing-select">Pilihan Nominal Sharing</label>
-              <select
-                id="sharing-select"
-                value={sharingMode}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSharingMode(val);
-                  if (val === 'auto') {
-                    setSharingAmount(autoSharingAmount);
-                  } else if (val !== 'custom') {
-                    setSharingAmount(val);
-                  }
-                }}
-              >
-                <option value="auto">
-                  ⚡ Otomatis ({formatRupiah(Number(autoSharingAmount) || 0)} — Sesuai Rumus Dokter, Umur &amp; Pemeriksaan)
-                </option>
-                <option value="18000">Rp 18.000 — Thorax Anak (&lt; 10 th) — dr. Anna Diah</option>
-                <option value="20000">Rp 20.000 — Thorax Dewasa (≥ 10 th) — dr. Anna Diah</option>
-                <option value="33000">Rp 33.000 — Thorax Anak (&lt; 10 th) — dr. Eva / dr. Iman</option>
-                <option value="35000">Rp 35.000 — Thorax Dewasa (≥ 10 th) — dr. Eva / dr. Iman</option>
-                <option value="58000">Rp 58.000 — Shoulder Joint</option>
-                <option value="88000">Rp 88.000 — Lumbosacral</option>
-                <option value="50000">Rp 50.000 — Standar Dokter</option>
-                <option value="0">Rp 0 — Tanpa Sharing</option>
-                <option value="custom">✎ Input Manual / Lainnya...</option>
-              </select>
-            </div>
-            <div className="form-field" style={{ gridColumn: '4', gridRow: '2' }}>
-              <label htmlFor="sharing">Nominal Sharing (Rp)</label>
-              <input
-                id="sharing"
-                type="number"
-                min="0"
-                step="1"
-                value={sharingAmount}
-                onChange={(e) => {
-                  setSharingAmount(e.target.value);
-                  setSharingMode('custom');
-                }}
-              />
-            </div>
-          </div>
+      <Modal open={addOpen} title="Registrasi Radiologi Baru" onClose={() => setAddOpen(false)} size="xl">
+        <form onSubmit={(e) => void onSubmitAdd(e)} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <fieldset className="legacy-groupbox">
+            <legend>Data Registrasi Radiologi</legend>
+            <div className="legacy-form-layout">
+              <div className="legacy-form-fields">
+                <div className="legacy-form-row">
+                  <label htmlFor="reg-no">No Registrasi</label>
+                  <input id="reg-no" type="text" value="Otomatis sistem" disabled />
+                </div>
+                <div className="legacy-form-row">
+                  <label htmlFor="nama">Nama Pasien</label>
+                  <input id="nama" required value={nama} onChange={(e) => setNama(e.target.value)} />
+                </div>
+                <div className="legacy-form-row">
+                  <label htmlFor="umur-manual">Umur</label>
+                  <input
+                    id="umur-manual"
+                    type="text"
+                    required
+                    placeholder="mis. 32 tahun / 6 bulan / 10 hari"
+                    value={umurManual}
+                    onChange={(e) => handleUmurManualChange(e.target.value)}
+                  />
+                </div>
+                <div className="legacy-form-row">
+                  <label htmlFor="pemeriksaan-select">Pemeriksaan</label>
+                  <select
+                    id="pemeriksaan-select"
+                    value={selectedJenis[0] ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedJenis(val ? [val] : []);
+                      const selected = jenis.find((j) => j.id === val);
+                      const hargaValue = selected?.harga ?? '0';
+                      setHargaManual(hargaValue);
+                      setHargaMode(hargaValue);
+                    }}
+                  >
+                    <option value="">Pilih pemeriksaan</option>
+                    {jenis.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-          {jenisPemeriksaanField}
-          {financePreview}
-          <div className="form-grid--span-3">
-            <ModalFormFooter
-              onCancel={() => setAddOpen(false)}
-              submitLabel="Simpan"
-              loading={saving}
-            />
-          </div>
+              <div className="legacy-form-fields">
+                <div className="legacy-form-row">
+                  <label htmlFor="radiolog">Radiolog</label>
+                  <select id="radiolog" value={radiologId} onChange={(e) => setRadiologId(e.target.value)}>
+                    <option value="">Pilih radiolog</option>
+                    {radiologList.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="legacy-form-row">
+                  <label htmlFor="harga">Harga</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <select
+                      id="harga-select"
+                      value={hargaMode}
+                      style={{ flex: '1 1 auto' }}
+                      title="Pilihan harga radiologi"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setHargaMode(val);
+                        if (val !== 'custom') setHargaManual(val);
+                      }}
+                    >
+                      <option value="custom">✎ Manual</option>
+                      {jenis.map((j) => (
+                        <option key={j.id} value={j.harga ?? '0'}>
+                          {j.nama} — {formatRupiah(j.harga ?? 0)}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      id="harga"
+                      type="number"
+                      min="0"
+                      step="1"
+                      style={{ flex: '0 0 110px' }}
+                      value={hargaManual}
+                      onChange={(e) => {
+                        setHargaManual(e.target.value);
+                        setHargaMode('custom');
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="legacy-form-row">
+                  <label htmlFor="sharing">Sharing</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <select
+                      id="sharing-select"
+                      value={sharingMode}
+                      style={{ flex: '0 0 auto', width: '2.4rem' }}
+                      title="Pilihan nominal sharing"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSharingMode(val);
+                        if (val === 'auto') {
+                          setSharingAmount(autoSharingAmount);
+                        } else if (val !== 'custom') {
+                          setSharingAmount(val);
+                        }
+                      }}
+                    >
+                      <option value="auto">⚡</option>
+                      <option value="18000">18rb</option>
+                      <option value="20000">20rb</option>
+                      <option value="33000">33rb</option>
+                      <option value="35000">35rb</option>
+                      <option value="58000">58rb</option>
+                      <option value="88000">88rb</option>
+                      <option value="50000">50rb</option>
+                      <option value="0">0</option>
+                      <option value="custom">✎</option>
+                    </select>
+                    <input
+                      id="sharing"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={sharingAmount}
+                      onChange={(e) => {
+                        setSharingAmount(e.target.value);
+                        setSharingMode('custom');
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="legacy-form-row" style={{ alignItems: 'flex-start' }}>
+                  <label htmlFor="kesan" style={{ paddingTop: '0.4rem' }}>Kesan</label>
+                  <textarea
+                    id="kesan"
+                    rows={3}
+                    value={kesan}
+                    onChange={(e) => setKesan(clampClinicalInput(e.target.value))}
+                    placeholder="Isi kesan radiologi..."
+                  />
+                </div>
+              </div>
+
+              <div className="legacy-button-rail">
+                <button type="submit" className="btn btn--primary" disabled={saving || savedPasien !== null}>
+                  {saving ? 'Menyimpan…' : savedPasien ? 'Tersimpan ✓' : 'Simpan'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={!savedPasien}
+                  onClick={() => {
+                    if (!savedPasien) return;
+                    setAddOpen(false);
+                    void openEdit(savedPasien.id);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={!savedPasien}
+                  onClick={() => savedPasien && void handlePrint(savedPasien.id)}
+                >
+                  Cetak Hasil
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={!savedPasien}
+                  onClick={() => setCetakAL({ open: true, mode: 'amplop' })}
+                >
+                  Cetak Amplop
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={!savedPasien}
+                  onClick={() => setCetakAL({ open: true, mode: 'label' })}
+                >
+                  Cetak Label
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.25rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--color-text-body)' }}>
+                Ambil Data Dari Pendaftaran Umum
+              </label>
+              <div style={{ overflowX: 'auto', marginTop: '0.5rem' }}>
+                <table className="data-table" style={{ marginBottom: 0 }}>
+                  <thead>
+                    <tr>
+                      <th>Pilih</th>
+                      <th>No Registrasi</th>
+                      <th>Nama</th>
+                      <th>Umur</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendaftaranList.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '1rem' }}>
+                          Belum ada data pendaftaran umum.
+                        </td>
+                      </tr>
+                    ) : (
+                      pendaftaranList.map((p) => (
+                        <tr
+                          key={p.id}
+                          onClick={() => handlePendaftaranSelect(p.id)}
+                          style={{
+                            cursor: 'pointer',
+                            backgroundColor: selectedPendaftaranId === p.id ? 'var(--color-primary-soft)' : 'transparent',
+                          }}
+                        >
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="radio"
+                              name="pilih-pendaftaran"
+                              checked={selectedPendaftaranId === p.id}
+                              onChange={() => handlePendaftaranSelect(p.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+                          <td>{p.noRegistrasi}</td>
+                          <td>{p.namaPasien}</td>
+                          <td>{p.umur || '-'}</td>
+                          <td>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <TableRowActions
+                                onEdit={() => openEditPendaftaran(p)}
+                                onDelete={() => setPendaftaranDeleting(p)}
+                                onPrint={() => setPendaftaranPreview(p)}
+                                editLabel="Ubah pendaftaran"
+                                deleteLabel="Hapus pendaftaran"
+                                printLabel="Cetak pendaftaran"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </fieldset>
         </form>
       </Modal>
+
+      <Modal
+        open={pendaftaranEditing !== null}
+        title="Ubah Pendaftaran Umum"
+        onClose={() => setPendaftaranEditing(null)}
+      >
+        <form onSubmit={(e) => void submitEditPendaftaran(e)} className="form-grid">
+          <div className="form-field form-field--full">
+            <label htmlFor="pu-nama">Nama *</label>
+            <input
+              id="pu-nama"
+              required
+              value={pendaftaranForm.namaPasien}
+              onChange={(e) => setPendaftaranForm((prev) => ({ ...prev, namaPasien: e.target.value }))}
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="pu-umur">Umur</label>
+            <input
+              id="pu-umur"
+              placeholder="mis. 32 tahun / 6 bulan / 10 hari"
+              value={pendaftaranForm.umur}
+              onChange={(e) => setPendaftaranForm((prev) => ({ ...prev, umur: e.target.value }))}
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="pu-telpon">Telpon</label>
+            <input
+              id="pu-telpon"
+              value={pendaftaranForm.telpon}
+              onChange={(e) => setPendaftaranForm((prev) => ({ ...prev, telpon: e.target.value }))}
+            />
+          </div>
+          <div className="form-field form-field--full">
+            <label htmlFor="pu-alamat">Alamat</label>
+            <input
+              id="pu-alamat"
+              value={pendaftaranForm.alamat}
+              onChange={(e) => setPendaftaranForm((prev) => ({ ...prev, alamat: e.target.value }))}
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="pu-dokter">Dokter Pengirim</label>
+            <select
+              id="pu-dokter"
+              value={pendaftaranForm.dokterPengirim}
+              onChange={(e) => setPendaftaranForm((prev) => ({ ...prev, dokterPengirim: e.target.value }))}
+            >
+              <option value="">-- Pilih Dokter --</option>
+              {dokter.map((d) => (
+                <option key={d.id} value={d.nama}>
+                  {d.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-field">
+            <label htmlFor="pu-admin">Admin</label>
+            <select
+              id="pu-admin"
+              value={pendaftaranForm.admin}
+              onChange={(e) => setPendaftaranForm((prev) => ({ ...prev, admin: e.target.value }))}
+            >
+              <option value="">-- Pilih Admin --</option>
+              {staffList.map((s) => (
+                <option key={s.id} value={s.nama}>
+                  {s.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+          <ModalFormFooter
+            onCancel={() => setPendaftaranEditing(null)}
+            submitLabel="Simpan Perubahan"
+            loading={pendaftaranSubmitting}
+          />
+        </form>
+      </Modal>
+
+      <ConfirmModal
+        open={pendaftaranDeleting !== null}
+        title="Hapus Pendaftaran"
+        message={`Apakah Anda yakin ingin menghapus pendaftaran "${pendaftaranDeleting?.namaPasien ?? ''}"?`}
+        confirmLabel="Hapus"
+        onConfirm={() => void confirmDeletePendaftaran()}
+        onClose={() => setPendaftaranDeleting(null)}
+        loading={pendaftaranSubmitting}
+      />
+
+      {pendaftaranPreview && (
+        <Modal
+          title={`Preview Cetak — ${pendaftaranPreview.noRegistrasi}`}
+          open={true}
+          onClose={() => setPendaftaranPreview(null)}
+          size="xl"
+        >
+          <div style={{ width: '100%', height: 'calc(100vh - 12rem)', minHeight: '600px' }}>
+            <PDFViewer width="100%" height="100%" className="pdf-viewer">
+              <PendaftaranReportDocument
+                data={{
+                  noRegistrasi: pendaftaranPreview.noRegistrasi,
+                  namaPasien: pendaftaranPreview.namaPasien,
+                  umur: pendaftaranPreview.umur || '',
+                  alamat: pendaftaranPreview.alamat || '',
+                  telpon: pendaftaranPreview.telpon || '',
+                  tanggalMasuk: new Date(pendaftaranPreview.tanggalMasuk).toLocaleDateString('id-ID'),
+                  dokterPengirim: pendaftaranPreview.dokterPengirim || '',
+                  klinis: pendaftaranPreview.klinis || '',
+                  admin: pendaftaranPreview.admin || '',
+                  logoSrc: pendaftaranLogoSrc,
+                }}
+              />
+            </PDFViewer>
+          </div>
+        </Modal>
+      )}
+
+      <CetakALModal
+        open={cetakAL.open}
+        initialMode={cetakAL.mode}
+        pasien={savedPasien}
+        onClose={() => setCetakAL((prev) => ({ ...prev, open: false }))}
+      />
 
       <Modal open={editOpen} title="Ubah Data Pasien" onClose={() => setEditOpen(false)} size="xl">
         <form onSubmit={(e) => void onSubmitEdit(e)} className="form-grid form-grid--wide">
           {patientFields}
           {klinisField}
           {kesanField}
+          {fotoField}
           {jenisPemeriksaanField}
           <div
             className="form-grid--span-3"

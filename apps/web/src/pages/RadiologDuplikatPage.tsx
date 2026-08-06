@@ -218,8 +218,8 @@ export function RadiologDuplikatPage() {
   return (
     <>
       <ListPageShell
-        title="Duplikat Radiologi — Arsip Registrasi Pasien"
-        subtitle="Arsip salinan data registrasi radiologi — tetap tersimpan walau data aslinya dihapus dari Data & Registrasi Pasien"
+        title="Duplikat Radiologi — Arsip Registrasi Radiologi"
+        subtitle="Arsip salinan data registrasi radiologi — tetap tersimpan walau data aslinya dihapus dari Data & Registrasi Radiologi"
         metrics={metrics}
         tabs={HASIL_TABS.map((t) => ({ id: t.id, label: t.label }))}
         activeTab={hasilTab}

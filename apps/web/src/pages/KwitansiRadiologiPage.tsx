@@ -321,13 +321,13 @@ export function KwitansiRadiologiPage() {
             </div>
 
             <div className="form-field" style={{ marginBottom: '1rem' }}>
-              <label htmlFor="edit-petugas-kasir">Petugas Kasir</label>
+              <label htmlFor="edit-petugas-kasir">Kasir</label>
               <select
                 id="edit-petugas-kasir"
                 value={editPetugasKasir}
                 onChange={(e) => setEditPetugasKasir(e.target.value)}
               >
-                <option value="">-- Pilih Petugas Kasir --</option>
+                <option value="">-- Pilih Kasir --</option>
                 {kasirList.map((k) => (
                   <option key={k.id} value={k.nama}>
                     {k.nama}

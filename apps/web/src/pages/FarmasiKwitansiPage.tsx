@@ -397,9 +397,9 @@ export function FarmasiKwitansiPage() {
                 </select>
               </div>
               <div className="form-field">
-                <label htmlFor="fk-kasir">Petugas Kasir</label>
+                <label htmlFor="fk-kasir">Kasir</label>
                 <select id="fk-kasir" value={petugasKasir} onChange={(e) => setPetugasKasir(e.target.value)}>
-                  <option value="">-- Pilih Petugas Kasir --</option>
+                  <option value="">-- Pilih Kasir --</option>
                   {kasirList.map((k) => (
                     <option key={k.id} value={k.nama}>
                       {k.nama}
@@ -525,9 +525,9 @@ export function FarmasiKwitansiPage() {
               </select>
             </div>
             <div className="form-field">
-              <label htmlFor="edit-fk-kasir">Petugas Kasir</label>
+              <label htmlFor="edit-fk-kasir">Kasir</label>
               <select id="edit-fk-kasir" value={editPetugasKasir} onChange={(e) => setEditPetugasKasir(e.target.value)}>
-                <option value="">-- Pilih Petugas Kasir --</option>
+                <option value="">-- Pilih Kasir --</option>
                 {kasirList.map((k) => (
                   <option key={k.id} value={k.nama}>
                     {k.nama}

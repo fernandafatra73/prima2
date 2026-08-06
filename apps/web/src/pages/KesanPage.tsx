@@ -349,7 +349,7 @@ function KategoriBacaanSection() {
           <h2 className="list-page__title">Kategori & Bacaan Kesan (Quick Kesan)</h2>
           <p className="list-page__subtitle">
             Menu kesan bertingkat (grup → kategori → bacaan) untuk mengisi Kesan dengan sekali klik di
-            halaman Registrasi Pasien.
+            halaman Registrasi Radiologi.
           </p>
         </div>
         <button type="button" className="btn btn--primary" onClick={() => openModal({ level: 'grup', mode: 'add' })}>

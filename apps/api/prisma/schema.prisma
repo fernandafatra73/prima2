@@ -537,6 +537,7 @@ model Pasien {
   kesan           String?
   admin           String?
   petugasKasir    String?
+  foto            String?
   radiologId      String?
   radiolog        Radiolog?     @relation("PasienRadiolog", fields: [radiologId], references: [id])
   pemeriksaan     PasienPemeriksaan[]

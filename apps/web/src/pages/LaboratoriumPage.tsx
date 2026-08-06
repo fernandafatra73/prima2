@@ -9,7 +9,7 @@ import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.t
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../lib/api.ts';
-import { computeUmurYears, formatRupiah, formatUmurTahun, parseUmurManualToTanggalLahir } from '../lib/format.ts';
+import { formatRupiah, formatUmurDetail, formatUmurTahun, parseUmurManualToTanggalLahir } from '../lib/format.ts';
 import type { PaginatedResponse } from '../lib/pagination.ts';
 import { LabReportDocument, type LabReportData } from '../pdf/LabReportDocument.tsx';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
@@ -186,6 +186,22 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; label: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Edit Cepat state
+  const [quickEditItem, setQuickEditItem] = useState<LabPasienItem | null>(null);
+  const [qeNama, setQeNama] = useState('');
+  const [qeUmurManual, setQeUmurManual] = useState('');
+  const [qeTanggalLahir, setQeTanggalLahir] = useState('');
+  const [qeAlamat, setQeAlamat] = useState('');
+  const [qePengirimId, setQePengirimId] = useState('');
+  const [qeHargaManual, setQeHargaManual] = useState('0');
+  const [qeHargaMode, setQeHargaMode] = useState('custom');
+  const [qeSharingAmount, setQeSharingAmount] = useState('0');
+  const [qeSharingMode, setQeSharingMode] = useState('custom');
+  const [qeTotalSharing, setQeTotalSharing] = useState('0');
+  const [qeAnalisId, setQeAnalisId] = useState('');
+  const [qeSaving, setQeSaving] = useState(false);
+  const [qeError, setQeError] = useState<string | null>(null);
+
   // Registrasi Lab state
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [dokterList, setDokterList] = useState<Dokter[]>([]);
@@ -199,8 +215,10 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
   const [regAlamat, setRegAlamat] = useState('');
   const [regKlinis, setRegKlinis] = useState('');
   const [regPengirimId, setRegPengirimId] = useState('');
-  const [regPaketIds, setRegPaketIds] = useState<string[]>([]);
   const [regSharingAmount, setRegSharingAmount] = useState('0');
+  const [regSharingMode, setRegSharingMode] = useState('custom');
+  const [regHargaManual, setRegHargaManual] = useState('0');
+  const [regHargaMode, setRegHargaMode] = useState('custom');
   const [regAdmin, setRegAdmin] = useState('');
   const [regAnalisId, setRegAnalisId] = useState('');
   const [regLabRows, setRegLabRows] = useState<LabTableRow[]>([]);
@@ -217,14 +235,6 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
   const [paketError, setPaketError] = useState<string | null>(null);
   const [deletePaketTarget, setDeletePaketTarget] = useState<PaketLabData | null>(null);
   const [deletePaketLoading, setDeletePaketLoading] = useState(false);
-
-  const regTotalHarga = useMemo(
-    () =>
-      paketList
-        .filter((p) => regPaketIds.includes(p.id))
-        .reduce((sum, p) => sum + Number(p.harga ?? 0), 0),
-    [paketList, regPaketIds],
-  );
 
   const editTotalHarga = useMemo(
     () =>
@@ -298,6 +308,65 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
     if (tanggal) setEditTanggalLahir(tanggal);
   }
 
+  function handleQeUmurManualChange(value: string) {
+    setQeUmurManual(value);
+    const tanggal = parseUmurManualToTanggalLahir(value);
+    if (tanggal) setQeTanggalLahir(tanggal);
+  }
+
+  async function openQuickEdit(item: LabPasienItem) {
+    setQuickEditItem(item);
+    setQeError(null);
+    setQeNama(item.nama);
+    setQeUmurManual(String(item.umur));
+    setQeTanggalLahir(item.tanggalLahir);
+    setQeAlamat(item.alamat ?? '');
+    setQePengirimId(item.pengirim.id);
+    const parsed = parseLabKesan(item.kesan);
+    setQeAnalisId(parsed.analisId || '');
+    setQeHargaMode('custom');
+    setQeSharingMode('custom');
+    try {
+      const res = await apiGet<{ item: { totalHarga: string; totalSharing: string; sharingAmount: string } }>(
+        `/api/pasien/${item.id}`,
+      );
+      setQeHargaManual(String(Math.round(Number(res.item.totalHarga))));
+      setQeSharingAmount(String(Math.round(Number(res.item.sharingAmount))));
+      setQeTotalSharing(res.item.totalSharing);
+    } catch {
+      setQeHargaManual('0');
+      setQeSharingAmount('0');
+      setQeTotalSharing('0');
+    }
+  }
+
+  async function submitQuickEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!quickEditItem) return;
+    setQeSaving(true);
+    setQeError(null);
+    try {
+      const parsed = parseLabKesan(quickEditItem.kesan);
+      const selectedAnalis = analisList.find((a) => a.id === qeAnalisId);
+      const serializedKesan = serializeLabKesan(parsed.rows, parsed.catatan, selectedAnalis?.nama ?? '', qeAnalisId);
+      await apiPatch(`/api/pasien/${quickEditItem.id}`, {
+        nama: qeNama,
+        tanggalLahir: qeTanggalLahir || undefined,
+        alamat: qeAlamat,
+        pengirimId: qePengirimId,
+        harga: Number(qeHargaManual) || 0,
+        sharingAmount: Number(qeSharingAmount) || 0,
+        kesan: serializedKesan,
+      });
+      setQuickEditItem(null);
+      await reload();
+    } catch (err: unknown) {
+      setQeError(err instanceof Error ? err.message : 'Gagal menyimpan');
+    } finally {
+      setQeSaving(false);
+    }
+  }
+
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
@@ -344,6 +413,10 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
 
   function handleRemoveRow(index: number) {
     setLabRows((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleClearRows() {
+    setLabRows([]);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -407,31 +480,10 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
     setRegAlamat(p.alamat || '');
     setRegNoTelepon(p.telpon || '');
     setRegKlinis(p.klinis || '');
-    if (p.tanggalMasuk) {
-      try {
-        const d = new Date(p.tanggalMasuk);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const tgl = `${yyyy}-${mm}-${dd}`;
-        setRegTanggalLahir(tgl);
-        const years = computeUmurYears(tgl);
-        setRegUmurManual(years === null ? '' : String(years));
-      } catch {
-        setRegTanggalLahir('');
-        setRegUmurManual('');
-      }
-    } else if (p.umur) {
-      const match = p.umur.match(/(\d+)/);
-      if (match) {
-        const years = parseInt(match[1], 10);
-        const y = new Date().getFullYear() - years;
-        setRegTanggalLahir(`${y}-01-01`);
-        setRegUmurManual(String(years));
-      } else {
-        setRegTanggalLahir('');
-        setRegUmurManual('');
-      }
+    if (p.umur) {
+      const tanggal = parseUmurManualToTanggalLahir(p.umur);
+      setRegUmurManual(p.umur);
+      setRegTanggalLahir(tanggal ?? '');
     } else {
       setRegTanggalLahir('');
       setRegUmurManual('');
@@ -470,8 +522,9 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
         alamat: regAlamat || undefined,
         pengirimId: regPengirimId,
         klinis: serializeKlinisData(regKlinis, [], []),
-        jenisPemeriksaanIds: regPaketIds.length > 0 ? regPaketIds : undefined,
+        jenisPemeriksaanIds: undefined,
         sharingAmount: Number(regSharingAmount),
+        harga: Number(regHargaManual) || 0,
         admin: regAdmin || undefined,
         asalModul: 'LABORATORIUM',
       });
@@ -712,6 +765,9 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
               setRegKlinis('');
               setRegPengirimId('');
                             setRegSharingAmount('0');
+              setRegSharingMode('custom');
+              setRegHargaManual('0');
+              setRegHargaMode('custom');
               setRegAdmin('');
               setRegAnalisId('');
               setRegLabRows([]);
@@ -754,7 +810,7 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
                   </div>
                 </td>
                 <td>
-                  {formatUmurTahun(item.umur)} ({item.jenisKelamin})
+                  {formatUmurDetail(item.tanggalLahir)} ({item.jenisKelamin})
                 </td>
                 <td>{item.pengirim.nama}</td>
                 <td>
@@ -776,10 +832,10 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
                     <button
                       type="button"
                       className="btn btn--secondary btn--sm"
-                      onClick={() => openEdit(item)}
-                      title="Edit Hasil Pemeriksaan Lab"
+                      onClick={() => void openQuickEdit(item)}
+                      title="Edit Cepat"
                     >
-                      ✏️ Edit
+                      ✏️ Edit Cepat
                     </button>
                     <button
                       type="button"
@@ -864,6 +920,15 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
                     >
                       <span>+</span> Tambah Baris
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--sm"
+                      onClick={handleClearRows}
+                      title="Hapus semua baris hasil pemeriksaan"
+                      style={{ border: '1px solid var(--color-border)', color: '#ef4444' }}
+                    >
+                      Kosongkan
                     </button>
                   </div>
                 </div>
@@ -1036,12 +1101,12 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
                 </div>
               </div>
 
-              {/* Umur & Dokter Pengirim */}
+              {/* Umur, Dokter Pengirim & Alamat */}
               <div
                 style={{
                   gridColumn: '1 / -1',
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  gridTemplateColumns: '1fr 1fr 1fr',
                   gap: '0.75rem 1.25rem',
                 }}
               >
@@ -1070,7 +1135,7 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
                     ))}
                   </select>
                 </div>
-                <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+                <div className="form-field">
                   <label htmlFor="lab-edit-alamat">Alamat</label>
                   <input
                     id="lab-edit-alamat"
@@ -1406,40 +1471,77 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
               </select>
             </div>
 
-            <div className="form-field form-grid--full" style={{ padding: '0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)' }}>
-              <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>2. Pilih Jenis Pemeriksaan Lab (Paket) *</label>
-              <div className="checkbox-list" style={{ flexDirection: 'row', flexWrap: 'wrap', maxHeight: '420px', overflowY: 'auto' }}>
-                {paketList.map((p) => (
-                  <label key={p.id} style={{ minWidth: '220px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <input
-                        type="checkbox"
-                        checked={regPaketIds.includes(p.id)}
-                        onChange={() => {
-                          setRegPaketIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id]);
-                        }}
-                      />
-                      {p.nama}
-                    </span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-                      {formatRupiah(p.harga ?? '0')}
-                    </span>
-                  </label>
-                ))}
+            <div className="form-field">
+              <label htmlFor="rHarga">Harga</label>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <select
+                  id="rHarga-select"
+                  value={regHargaMode}
+                  style={{ flex: '1 1 auto' }}
+                  title="Pilihan harga lab"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRegHargaMode(val);
+                    if (val !== 'custom') setRegHargaManual(val);
+                  }}
+                >
+                  <option value="custom">✎ Manual</option>
+                  {paketList.map((p) => (
+                    <option key={p.id} value={p.harga ?? '0'}>
+                      {p.nama} — {formatRupiah(p.harga ?? 0)}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  id="rHarga"
+                  type="number"
+                  min="0"
+                  step="1"
+                  style={{ flex: '0 0 110px' }}
+                  value={regHargaManual}
+                  onChange={(e) => {
+                    setRegHargaManual(e.target.value);
+                    setRegHargaMode('custom');
+                  }}
+                />
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: '0.75rem',
-                  paddingTop: '0.6rem',
-                  borderTop: '1px dashed var(--color-border)',
-                  fontWeight: 700,
-                }}
-              >
-                <span>Total Harga Pemeriksaan</span>
-                <span style={{ color: 'var(--color-primary)' }}>{formatRupiah(regTotalHarga)}</span>
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="rSharing">Sharing</label>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <select
+                  id="rSharing-select"
+                  value={regSharingMode}
+                  style={{ flex: '0 0 auto', width: '2.4rem' }}
+                  title="Pilihan nominal sharing"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRegSharingMode(val);
+                    if (val !== 'custom') setRegSharingAmount(val);
+                  }}
+                >
+                  <option value="custom">✎</option>
+                  <option value="18000">18rb</option>
+                  <option value="20000">20rb</option>
+                  <option value="33000">33rb</option>
+                  <option value="35000">35rb</option>
+                  <option value="58000">58rb</option>
+                  <option value="88000">88rb</option>
+                  <option value="50000">50rb</option>
+                  <option value="0">0</option>
+                </select>
+                <input
+                  id="rSharing"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={regSharingAmount}
+                  onChange={(e) => {
+                    setRegSharingAmount(e.target.value);
+                    setRegSharingMode('custom');
+                  }}
+                />
               </div>
             </div>
 
@@ -1478,6 +1580,145 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
         onClose={() => setAmplopItem(null)}
         pasien={amplopItem as CetakAmplopLabPasien | null}
       />
+
+      <Modal
+        open={quickEditItem !== null}
+        title="Edit Cepat"
+        onClose={() => setQuickEditItem(null)}
+      >
+        <form onSubmit={(e) => void submitQuickEdit(e)} className="form-grid">
+          {qeError && <div className="alert alert--error form-field--full">{qeError}</div>}
+
+          <div className="form-field form-field--full">
+            <label htmlFor="qe-nama">Nama *</label>
+            <input id="qe-nama" required value={qeNama} onChange={(e) => setQeNama(e.target.value)} />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="qe-umur">Umur</label>
+            <input
+              id="qe-umur"
+              type="text"
+              placeholder="mis. 32 tahun / 6 bulan / 10 hari"
+              value={qeUmurManual}
+              onChange={(e) => handleQeUmurManualChange(e.target.value)}
+            />
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="qe-alamat">Alamat</label>
+            <input id="qe-alamat" value={qeAlamat} onChange={(e) => setQeAlamat(e.target.value)} />
+          </div>
+
+          <div className="form-field form-field--full">
+            <label htmlFor="qe-dokter">Dokter Pengirim</label>
+            <select id="qe-dokter" value={qePengirimId} onChange={(e) => setQePengirimId(e.target.value)}>
+              <option value="">-- Pilih Dokter --</option>
+              {dokterList.map((d) => (
+                <option key={d.id} value={d.id}>{d.nama}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="qe-harga">Harga</label>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <select
+                id="qe-harga-select"
+                value={qeHargaMode}
+                style={{ flex: '1 1 auto' }}
+                title="Pilihan harga lab"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setQeHargaMode(val);
+                  if (val !== 'custom') setQeHargaManual(val);
+                }}
+              >
+                <option value="custom">✎ Manual</option>
+                {paketList.map((p) => (
+                  <option key={p.id} value={p.harga ?? '0'}>
+                    {p.nama} — {formatRupiah(p.harga ?? 0)}
+                  </option>
+                ))}
+              </select>
+              <input
+                id="qe-harga"
+                type="number"
+                min="0"
+                step="1"
+                style={{ flex: '0 0 110px' }}
+                value={qeHargaManual}
+                onChange={(e) => {
+                  setQeHargaManual(e.target.value);
+                  setQeHargaMode('custom');
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label htmlFor="qe-sharing">Sharing</label>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <select
+                id="qe-sharing-select"
+                value={qeSharingMode}
+                style={{ flex: '0 0 auto', width: '2.4rem' }}
+                title="Pilihan nominal sharing"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setQeSharingMode(val);
+                  if (val !== 'custom') setQeSharingAmount(val);
+                }}
+              >
+                <option value="custom">✎</option>
+                <option value="18000">18rb</option>
+                <option value="20000">20rb</option>
+                <option value="33000">33rb</option>
+                <option value="35000">35rb</option>
+                <option value="58000">58rb</option>
+                <option value="88000">88rb</option>
+                <option value="50000">50rb</option>
+                <option value="0">0</option>
+              </select>
+              <input
+                id="qe-sharing"
+                type="number"
+                min="0"
+                step="1"
+                value={qeSharingAmount}
+                onChange={(e) => {
+                  setQeSharingAmount(e.target.value);
+                  setQeSharingMode('custom');
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="form-field">
+            <span className="form-field__static-label">Total Sharing</span>
+            <p className="form-field__static-value">{formatRupiah(qeTotalSharing)}</p>
+          </div>
+
+          <div className="form-field form-field--full">
+            <label htmlFor="qe-analis">Analis</label>
+            <select id="qe-analis" value={qeAnalisId} onChange={(e) => setQeAnalisId(e.target.value)}>
+              <option value="">-- Pilih Analis --</option>
+              {analisList.map((a) => (
+                <option key={a.id} value={a.id}>{a.nama}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-actions form-actions--end form-field--full">
+            <button type="submit" className="btn btn--primary" disabled={qeSaving}>
+              {qeSaving ? 'Menyimpan…' : 'Simpan'}
+            </button>
+            <button type="button" className="btn btn--ghost" onClick={() => setQuickEditItem(null)}>
+              Batal
+            </button>
+          </div>
+        </form>
+      </Modal>
     </ListPageShell>
   );
 }

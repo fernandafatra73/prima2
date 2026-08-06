@@ -8,7 +8,8 @@
       "PowerShell(winget install --id PostgreSQL.PostgreSQL.17 -e --source winget --accept-source-agreements --accept-package-agreements --override \"--mode unattended --unattendedmodeui minimal --superpassword postgres --serverport 5432\")",
       "PowerShell(try { $r = Invoke-WebRequest -Uri \"https://get.enterprisedb.com/postgresql/postgresql-17.10-2-windows-x64.exe\" -Method Head -UseBasicParsing; $r.StatusCode } catch { $_.Exception.Response.StatusCode.value__; $_.Exception.Message })",
       "PowerShell(\\([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent\\(\\)\\).IsInRole\\([Security.Principal.WindowsBuiltinRole]::Administrator\\))",
-      "PowerShell(winget install --id PostgreSQL.PostgreSQL.17 -e --source winget --accept-source-agreements --accept-package-agreements --override \"--mode unattended --unattendedmodeui minimal --superpassword postgres --serverport 5432 --disable-components stackbuilder\")"
+      "PowerShell(winget install --id PostgreSQL.PostgreSQL.17 -e --source winget --accept-source-agreements --accept-package-agreements --override \"--mode unattended --unattendedmodeui minimal --superpassword postgres --serverport 5432 --disable-components stackbuilder\")",
+      "Bash(command -v psql)"
     ]
   }
 }

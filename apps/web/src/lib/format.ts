@@ -37,29 +37,41 @@ export function computeUmurYears(tanggalLahir: string, refIso?: string): number 
 }
 
 /**
- * Terima input umur bebas (angka saja = tahun, atau "6 bulan", "10 hari", "2 minggu")
+ * Terima input umur bebas — angka saja (= tahun), satu satuan ("6 bulan"),
+ * atau gabungan ("32 Thn 5 bln", mis. hasil tampilan formatUmurDetail) —
  * lalu ubah jadi tanggal lahir perkiraan. Null kalau teksnya tidak dikenali.
  */
 export function parseUmurManualToTanggalLahir(value: string): string | null {
-  const match = /^(\d+)\s*(tahun|thn|th|bulan|bln|bl|minggu|mgg|hari|hr)?$/i.exec(value.trim());
-  if (!match) return null;
-  const amount = parseInt(match[1], 10);
-  if (!Number.isFinite(amount) || amount < 0) return null;
-  const unit = (match[2] ?? 'tahun').toLowerCase();
+  const trimmed = value.trim();
+  if (!trimmed) return null;
 
-  if (unit.startsWith('th')) {
-    const y = new Date().getFullYear() - amount;
+  if (/^\d+$/.test(trimmed)) {
+    const y = new Date().getFullYear() - parseInt(trimmed, 10);
     return `${y}-01-01`;
   }
 
-  const d = new Date();
-  if (unit.startsWith('b')) {
-    d.setDate(d.getDate() - amount * 30);
-  } else if (unit.startsWith('m')) {
-    d.setDate(d.getDate() - amount * 7);
-  } else {
-    d.setDate(d.getDate() - amount);
+  const tokenRe = /(\d+)\s*(tahun|thn|th|bulan|bln|bl|minggu|mgg|hari|hr)/gi;
+  let years = 0;
+  let months = 0;
+  let weeks = 0;
+  let days = 0;
+  let found = false;
+  let match: RegExpExecArray | null;
+  while ((match = tokenRe.exec(trimmed)) !== null) {
+    found = true;
+    const amount = parseInt(match[1], 10);
+    const unit = match[2].toLowerCase();
+    if (unit.startsWith('t')) years += amount;
+    else if (unit.startsWith('b')) months += amount;
+    else if (unit.startsWith('m')) weeks += amount;
+    else days += amount;
   }
+  if (!found) return null;
+
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - years);
+  d.setMonth(d.getMonth() - months);
+  d.setDate(d.getDate() - weeks * 7 - days);
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');

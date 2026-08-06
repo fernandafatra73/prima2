@@ -2097,9 +2097,11 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       klinis?: string;
       jenisPemeriksaanIds: string[];
       sharingAmount?: number;
+      harga?: number;
       radiologId?: string;
       admin?: string;
       petugasKasir?: string;
+      foto?: string;
       asalModul?: 'RADIOLOGI' | 'LABORATORIUM';
     };
   }>('/api/pasien', async (req, reply) => {
@@ -2146,6 +2148,10 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       totalHarga = sumHarga(pemeriksaanData);
     }
 
+    if (body.harga !== undefined) {
+      totalHarga = new Decimal(body.harga);
+    }
+
     const sharingAmount = new Decimal(body.sharingAmount ?? dokter.defaultSharingAmount);
     const totalSharing = calcTotalSharing(totalHarga, 'FIXED', new Decimal(0), sharingAmount);
 
@@ -2167,6 +2173,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
         radiologId: body.radiologId || null,
         admin: body.admin?.trim() || null,
         petugasKasir: body.petugasKasir?.trim() || null,
+        foto: body.foto || null,
         pemeriksaan: { create: pemeriksaanData },
         paketLab: { create: paketLabData },
       },
@@ -2195,9 +2202,11 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       paymentStatus?: 'BELUM_LUNAS' | 'LUNAS';
       radiologId?: string | null;
       sharingAmount?: number;
+      harga?: number;
       jenisPemeriksaanIds?: string[];
       admin?: string;
       petugasKasir?: string;
+      foto?: string;
       kesan?: string;
       sharingLocked?: boolean;
     };
@@ -2255,6 +2264,10 @@ export async function registerCrudRoutes(app: FastifyInstance) {
       }
     }
 
+    if (req.body.harga !== undefined) {
+      totalHarga = new Decimal(req.body.harga);
+    }
+
     const totalSharing = calcTotalSharing(totalHarga, 'FIXED', new Decimal(0), sharingAmount);
     const sharingLocked = hasilStatus === 'SELESAI';
 
@@ -2297,6 +2310,7 @@ export async function registerCrudRoutes(app: FastifyInstance) {
           admin: req.body.admin !== undefined ? req.body.admin?.trim() || null : existing.admin,
           petugasKasir:
             req.body.petugasKasir !== undefined ? req.body.petugasKasir?.trim() || null : existing.petugasKasir,
+          foto: req.body.foto !== undefined ? req.body.foto || null : existing.foto,
           sharingLocked,
           sharingType: 'FIXED',
           sharingPercent: new Decimal(0),
@@ -3166,6 +3180,7 @@ function mapPasien(
     kesan: string | null;
     admin: string | null;
     petugasKasir: string | null;
+    foto: string | null;
     createdAt: Date;
     pengirim: { id: string; nama: string };
     radiolog?: { id: string; nama: string } | null;
@@ -3202,6 +3217,7 @@ function mapPasien(
     kesan: p.kesan,
     admin: p.admin,
     petugasKasir: p.petugasKasir,
+    foto: p.foto,
     radiolog: p.radiolog ?? null,
     // Radiologi pakai PasienPemeriksaan (relasi ke JenisPemeriksaan), Laboratorium
     // pakai PasienPaketLab (relasi ke PaketLab) — keduanya digabung jadi satu

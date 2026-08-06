@@ -57,7 +57,7 @@ export function PetugasKasirPage() {
       setCreateOpen(false);
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal membuat petugas kasir');
+      setError(err instanceof Error ? err.message : 'Gagal membuat kasir');
     } finally {
       setSubmitting(false);
     }
@@ -76,7 +76,7 @@ export function PetugasKasirPage() {
       setEditing(null);
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal mengubah petugas kasir');
+      setError(err instanceof Error ? err.message : 'Gagal mengubah kasir');
     } finally {
       setSubmitting(false);
     }
@@ -91,7 +91,7 @@ export function PetugasKasirPage() {
       setDeleting(null);
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal menghapus petugas kasir');
+      setError(err instanceof Error ? err.message : 'Gagal menghapus kasir');
     } finally {
       setSubmitting(false);
     }
@@ -99,10 +99,10 @@ export function PetugasKasirPage() {
 
   return (
     <ListPageShell
-      title="Manajemen Petugas Kasir"
+      title="Manajemen Kasir"
       metrics={[
         {
-          label: 'Total Petugas Kasir',
+          label: 'Total Kasir',
           value: String(pagination.total),
           tone: 'blue',
           iconKind: 'users',
@@ -118,7 +118,7 @@ export function PetugasKasirPage() {
       onPageChange={setPage}
       action={
         <button type="button" className="btn btn--primary" onClick={openCreate}>
-          + Tambah Petugas Kasir
+          + Tambah Kasir
         </button>
       }
     >
@@ -126,7 +126,7 @@ export function PetugasKasirPage() {
         <thead>
           <tr>
             <th>No</th>
-            <th>Nama Petugas Kasir</th>
+            <th>Nama Kasir</th>
             <th>No. HP</th>
             <th>Aksi</th>
           </tr>
@@ -135,7 +135,7 @@ export function PetugasKasirPage() {
           {items.length === 0 ? (
             <tr>
               <td colSpan={4} style={{ textAlign: 'center', padding: '2rem' }}>
-                Belum ada data petugas kasir.
+                Belum ada data kasir.
               </td>
             </tr>
           ) : (
@@ -150,8 +150,8 @@ export function PetugasKasirPage() {
                   <TableRowActions
                     onEdit={() => openEdit(item)}
                     onDelete={() => setDeleting(item)}
-                    editLabel="Ubah petugas kasir"
-                    deleteLabel="Hapus petugas kasir"
+                    editLabel="Ubah kasir"
+                    deleteLabel="Hapus kasir"
                   />
                 </td>
               </tr>
@@ -161,10 +161,10 @@ export function PetugasKasirPage() {
       </table>
 
       {createOpen && (
-        <Modal open={true} title="Tambah Petugas Kasir" onClose={() => setCreateOpen(false)}>
+        <Modal open={true} title="Tambah Kasir" onClose={() => setCreateOpen(false)}>
           <form onSubmit={(e) => void handleCreate(e)} className="form-grid">
             <div className="form-field form-field--full">
-              <label htmlFor="kasir-nama">Nama Petugas Kasir *</label>
+              <label htmlFor="kasir-nama">Nama Kasir *</label>
               <input
                 id="kasir-nama"
                 type="text"
@@ -196,10 +196,10 @@ export function PetugasKasirPage() {
       )}
 
       {editing && (
-        <Modal open={true} title="Ubah Petugas Kasir" onClose={() => setEditing(null)}>
+        <Modal open={true} title="Ubah Kasir" onClose={() => setEditing(null)}>
           <form onSubmit={(e) => void handleUpdate(e)} className="form-grid">
             <div className="form-field form-field--full">
-              <label htmlFor="edit-kasir-nama">Nama Petugas Kasir *</label>
+              <label htmlFor="edit-kasir-nama">Nama Kasir *</label>
               <input
                 id="edit-kasir-nama"
                 type="text"
@@ -231,8 +231,8 @@ export function PetugasKasirPage() {
       {deleting && (
         <ConfirmModal
           open={true}
-          title="Hapus Petugas Kasir"
-          message={`Apakah Anda yakin ingin menghapus petugas kasir "${deleting.nama}"?`}
+          title="Hapus Kasir"
+          message={`Apakah Anda yakin ingin menghapus kasir "${deleting.nama}"?`}
           confirmLabel="Hapus"
           onConfirm={() => void handleDeleteConfirm()}
           onClose={() => setDeleting(null)}
