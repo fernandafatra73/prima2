@@ -176,6 +176,9 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
   const [hasilStatus, setHasilStatus] = useState<'MENUNGGU_HASIL' | 'SELESAI'>('MENUNGGU_HASIL');
   const [paymentStatus, setPaymentStatus] = useState<'BELUM_LUNAS' | 'LUNAS'>('BELUM_LUNAS');
   const [editPaketIds, setEditPaketIds] = useState<string[]>([]);
+  const [editUmurManual, setEditUmurManual] = useState('');
+  const [editTanggalLahir, setEditTanggalLahir] = useState('');
+  const [editPengirimId, setEditPengirimId] = useState('');
   const [saving, setSaving] = useState(false);
   const [printingId, setPrintingId] = useState<string | null>(null);
   const [logoSrc, setLogoSrc] = useState('');
@@ -282,6 +285,15 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
     setHasilStatus(item.hasilStatus);
     setPaymentStatus(item.paymentStatus);
     setEditPaketIds(item.pemeriksaan.map((x) => x.jenisPemeriksaanId));
+    setEditTanggalLahir(item.tanggalLahir);
+    setEditUmurManual(String(item.umur));
+    setEditPengirimId(item.pengirim.id);
+  }
+
+  function handleEditUmurManualChange(value: string) {
+    setEditUmurManual(value);
+    const tanggal = parseUmurManualToTanggalLahir(value);
+    if (tanggal) setEditTanggalLahir(tanggal);
   }
 
   async function confirmDelete() {
@@ -350,6 +362,8 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
         hasilStatus,
         paymentStatus,
         jenisPemeriksaanIds: editPaketIds.length > 0 ? editPaketIds : undefined,
+        tanggalLahir: editTanggalLahir || undefined,
+        pengirimId: editPengirimId || undefined,
       });
       setSelected(null);
       await reload();
@@ -1016,6 +1030,42 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
                 >
                   <span>Total Harga Pemeriksaan</span>
                   <span style={{ color: 'var(--color-primary)' }}>{formatRupiah(editTotalHarga)}</span>
+                </div>
+              </div>
+
+              {/* Umur & Dokter Pengirim */}
+              <div
+                style={{
+                  gridColumn: '1 / -1',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '0.75rem 1.25rem',
+                }}
+              >
+                <div className="form-field">
+                  <label htmlFor="lab-edit-umur">Umur</label>
+                  <input
+                    id="lab-edit-umur"
+                    type="text"
+                    placeholder="mis. 32 tahun / 6 bulan / 10 hari"
+                    value={editUmurManual}
+                    onChange={(e) => handleEditUmurManualChange(e.target.value)}
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="lab-edit-pengirim">Dokter Pengirim</label>
+                  <select
+                    id="lab-edit-pengirim"
+                    value={editPengirimId}
+                    onChange={(e) => setEditPengirimId(e.target.value)}
+                  >
+                    <option value="">-- Pilih Dokter --</option>
+                    {dokterList.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.nama}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
