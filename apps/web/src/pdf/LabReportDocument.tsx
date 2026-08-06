@@ -259,6 +259,8 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     alignItems: 'flex-end',
     paddingTop: 6,
+    // Naikkan blok Divalidasi/Analis 2cm dari batas bawah halaman.
+    marginBottom: 57,
   },
   signature: {
     width: 200,
