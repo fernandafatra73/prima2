@@ -18,6 +18,7 @@ import {
   computeUmurYears,
   formatRupiah,
   formatUmurTahun,
+  parseUmurManualToTanggalLahir,
 } from '../lib/format.ts';
 import { printPasienReport } from '../lib/pasienPrint.ts';
 import type { PaginatedResponse } from '../lib/pagination.ts';
@@ -107,36 +108,6 @@ const HASIL_TABS = [
   { id: 'MENUNGGU_HASIL', label: 'Menunggu hasil' },
   { id: 'SELESAI', label: 'Selesai' },
 ] as const;
-
-/**
- * Terima input umur bebas (angka saja = tahun, atau "6 bulan", "10 hari", "2 minggu")
- * lalu ubah jadi tanggal lahir perkiraan. Null kalau teksnya tidak dikenali.
- */
-function parseUmurManualToTanggalLahir(value: string): string | null {
-  const match = /^(\d+)\s*(tahun|thn|th|bulan|bln|bl|minggu|mgg|hari|hr)?$/i.exec(value.trim());
-  if (!match) return null;
-  const amount = parseInt(match[1], 10);
-  if (!Number.isFinite(amount) || amount < 0) return null;
-  const unit = (match[2] ?? 'tahun').toLowerCase();
-
-  if (unit.startsWith('th')) {
-    const y = new Date().getFullYear() - amount;
-    return `${y}-01-01`;
-  }
-
-  const d = new Date();
-  if (unit.startsWith('b')) {
-    d.setDate(d.getDate() - amount * 30);
-  } else if (unit.startsWith('m')) {
-    d.setDate(d.getDate() - amount * 7);
-  } else {
-    d.setDate(d.getDate() - amount);
-  }
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-}
 
 export function PasienPage() {
   const { search, setSearch } = useListSearch();

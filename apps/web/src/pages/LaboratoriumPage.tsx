@@ -9,7 +9,7 @@ import { useListQueryParams, useListSearch } from '../hooks/useListQueryParams.t
 import { useMutationReload } from '../hooks/useMutationReload.ts';
 import { usePaginatedList } from '../hooks/usePaginatedList.ts';
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '../lib/api.ts';
-import { computeUmurYears, formatRupiah, formatUmurTahun } from '../lib/format.ts';
+import { computeUmurYears, formatRupiah, formatUmurTahun, parseUmurManualToTanggalLahir } from '../lib/format.ts';
 import type { PaginatedResponse } from '../lib/pagination.ts';
 import { LabReportDocument, type LabReportData } from '../pdf/LabReportDocument.tsx';
 import { loadLogoDataUrl } from '../pdf/loadLogoDataUrl.ts';
@@ -437,11 +437,8 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
 
   function handleRegUmurManualChange(value: string) {
     setRegUmurManual(value);
-    const years = parseInt(value, 10);
-    if (Number.isFinite(years) && years >= 0) {
-      const y = new Date().getFullYear() - years;
-      setRegTanggalLahir(`${y}-01-01`);
-    }
+    const tanggal = parseUmurManualToTanggalLahir(value);
+    if (tanggal) setRegTanggalLahir(tanggal);
   }
 
   async function handleRegisterPasien(e: React.FormEvent) {
@@ -1321,13 +1318,12 @@ export function LaboratoriumPage({ onNavigate }: LaboratoriumPageProps) {
             </div>
 
             <div className="form-field">
-              <label htmlFor="rUmurManual">Umur (tahun) *</label>
+              <label htmlFor="rUmurManual">Umur *</label>
               <input
                 id="rUmurManual"
-                type="number"
-                min="0"
-                step="1"
+                type="text"
                 required
+                placeholder="mis. 32 tahun / 6 bulan / 10 hari"
                 value={regUmurManual}
                 onChange={(e) => handleRegUmurManualChange(e.target.value)}
               />
